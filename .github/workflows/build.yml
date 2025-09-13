@@ -61,6 +61,10 @@ jobs:
 
         npm ci
 
+    - name: Show installed version
+      run: |
+        npx crosspost --version
+
   pre-commit:
     name: pre-commit checks
     runs-on: ubuntu-latest
