@@ -141,117 +141,132 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+
+    - name: Install Python deps
+      shell: bash
+      run: |
+        uv venv
+        uv pip install requests lxml
+
+    - name: Get URLs from Sitemap
+      id: get-urls
+      shell: bash
+      run: |
+        uv run python scripts/get_urls.py \
+          --sitemap-url "${{ inputs.sitemap-url }}" \
+          --since "${{ inputs.since }}" \
+          --since-unit "${{ inputs.since-unit }}" \
+          --exclude-urls "${{ inputs.exclude-urls }}" \
+          --filter-urls "${{ inputs.filter-urls }}"
+
+
+    # - name: Get URLs from Sitemap
+    #   shell: bash
+    #   id: get-urls
+    #   run: |
+    #     SITEMAP_URL="${{ inputs.sitemap-url }}"
+
+    #     # Get current time and since requested ago in ISO 8601
+    #     NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    #     SINCE_AGO=$(date -u -d '${{ inputs.since }} ${{ inputs.since-unit }} ago' +"%Y-%m-%dT%H:%M:%SZ")
+
+    #     # Fetch and parse sitemap, get URLs with lastmod since SINCE_AGO
+    #     UPDATED_URLS=$(curl -s "$SITEMAP_URL" | \
+    #       xmlstarlet sel -N x="http://www.sitemaps.org/schemas/sitemap/0.9" \
+    #         -t -m "//x:url" \
+    #         -v "x:loc" -o "|" -v "x:lastmod" -n | \
+    #       while IFS="|" read -r url lastmod; do
+    #         # Convert lastmod to UTC ISO 8601 (Z)
+    #         lastmod_iso=$(date -u -d "$lastmod" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
+    #         # If lastmod is empty or conversion failed, skip
+    #         if [[ -z "$lastmod_iso" ]]; then
+    #           continue
+    #         fi
+    #         # Compare lastmod to SINCE_AGO
+    #         if [[ "$lastmod_iso" > "$SINCE_AGO" ]]; then
+    #           echo "$url"
+    #         fi
+    #       done | sort -u)
+
+    #     if [[ -z "$UPDATED_URLS" ]]; then
+    #       echo "No URLs updated in the ${{ inputs.since }} ${{ inputs.since-unit }}."
+    #       exit 0
+    #     fi
+
+    #     # Iterate over each updated URL
+    #     echo "$UPDATED_URLS" | while read -r url; do
+    #       exclude=false
+    #       include=false
+
+    #       # -------------------------
+    #       # Exclusion pass (glob match)
+    #       # -------------------------
+    #       while IFS= read -r pattern; do
+    #         # strip comments and whitespace
+    #         pattern="${pattern%%#*}"
+    #         pattern="${pattern#"${pattern%%[![:space:]]*}"}"
+    #         pattern="${pattern%"${pattern##*[![:space:]]}"}"
+    #         [ -z "$pattern" ] && continue
+
+    #         case "$url" in
+    #           $pattern) exclude=true; break ;;
+    #         esac
+    #       done <<< "${{ inputs.exclude-urls }}"
+
+    #       $exclude && {
+    #         echo "Excluding URL: $url"
+    #         continue
+    #       }
+
+    #       # -------------------------
+    #       # Filter pass (substring match)
+    #       # -------------------------
+    #       if [ -n "${{ inputs.filter-urls }}" ]; then
+    #         while IFS= read -r pattern; do
+    #           # strip comments and whitespace
+    #           pattern="${pattern%%#*}"
+    #           pattern="${pattern#"${pattern%%[![:space:]]*}"}"
+    #           pattern="${pattern%"${pattern##*[![:space:]]}"}"
+    #           [ -z "$pattern" ] && continue
+
+    #           # substring check
+    #           if printf '%s' "$url" | grep -qF "$pattern"; then
+    #             include=true
+    #             break
+    #           fi
+    #         done <<< "${{ inputs.filter-urls }}"
+
+    #         # if no filter matched, skip
+    #         if ! $include; then
+    #           echo "Skipping (no filter match): $url"
+    #           continue
+    #         fi
+    #       fi
+
+    #       # -------------------------
+    #       # Process URL
+    #       # -------------------------
+    #       echo "Processing URL: $url"
+    #     done
+
+    #     {
+    #       echo 'latest-urls<<EOF'
+    #       echo "$UPDATED_URLS"
+    #       echo 'EOF'
+    #     } >> "$GITHUB_OUTPUT"
+
     - name: Install Node
       uses: actions/setup-node@v5
       with:
         node-version-file: package.json
         cache: npm
 
-    - name: Install dependencies
+    - name: Install crosspost
       shell: bash
-      env:
-        VERSION: ${{ inputs.version }}
       run: |
-        set -x
-        sudo debconf-set-selections <<< "man-db man-db/auto-update boolean false"
-        sudo rm -f /var/lib/man-db/auto-update
-        sudo apt-get update && sudo apt-get install -y jq xmlstarlet
         npm ci
-
-    - name: Get URLs from Sitemap
-      shell: bash
-      id: get-urls
-      run: |
-        SITEMAP_URL="${{ inputs.sitemap-url }}"
-
-        # Get current time and since requested ago in ISO 8601
-        NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-        SINCE_AGO=$(date -u -d '${{ inputs.since }} ${{ inputs.since-unit }} ago' +"%Y-%m-%dT%H:%M:%SZ")
-
-        # Fetch and parse sitemap, get URLs with lastmod since SINCE_AGO
-        UPDATED_URLS=$(curl -s "$SITEMAP_URL" | \
-          xmlstarlet sel -N x="http://www.sitemaps.org/schemas/sitemap/0.9" \
-            -t -m "//x:url" \
-            -v "x:loc" -o "|" -v "x:lastmod" -n | \
-          while IFS="|" read -r url lastmod; do
-            # Convert lastmod to UTC ISO 8601 (Z)
-            lastmod_iso=$(date -u -d "$lastmod" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
-            # If lastmod is empty or conversion failed, skip
-            if [[ -z "$lastmod_iso" ]]; then
-              continue
-            fi
-            # Compare lastmod to SINCE_AGO
-            if [[ "$lastmod_iso" > "$SINCE_AGO" ]]; then
-              echo "$url"
-            fi
-          done | sort -u)
-
-        if [[ -z "$UPDATED_URLS" ]]; then
-          echo "No URLs updated in the ${{ inputs.since }} ${{ inputs.since-unit }}."
-          exit 0
-        fi
-
-        # Iterate over each updated URL
-        echo "$UPDATED_URLS" | while read -r url; do
-          exclude=false
-          include=false
-
-          # -------------------------
-          # Exclusion pass (glob match)
-          # -------------------------
-          while IFS= read -r pattern; do
-            # strip comments and whitespace
-            pattern="${pattern%%#*}"
-            pattern="${pattern#"${pattern%%[![:space:]]*}"}"
-            pattern="${pattern%"${pattern##*[![:space:]]}"}"
-            [ -z "$pattern" ] && continue
-
-            case "$url" in
-              $pattern) exclude=true; break ;;
-            esac
-          done <<< "${{ inputs.exclude-urls }}"
-
-          $exclude && {
-            echo "Excluding URL: $url"
-            continue
-          }
-
-          # -------------------------
-          # Filter pass (substring match)
-          # -------------------------
-          if [ -n "${{ inputs.filter-urls }}" ]; then
-            while IFS= read -r pattern; do
-              # strip comments and whitespace
-              pattern="${pattern%%#*}"
-              pattern="${pattern#"${pattern%%[![:space:]]*}"}"
-              pattern="${pattern%"${pattern##*[![:space:]]}"}"
-              [ -z "$pattern" ] && continue
-
-              # substring check
-              if printf '%s' "$url" | grep -qF "$pattern"; then
-                include=true
-                break
-              fi
-            done <<< "${{ inputs.filter-urls }}"
-
-            # if no filter matched, skip
-            if ! $include; then
-              echo "Skipping (no filter match): $url"
-              continue
-            fi
-          fi
-
-          # -------------------------
-          # Process URL
-          # -------------------------
-          echo "Processing URL: $url"
-        done
-
-        {
-          echo 'latest-urls<<EOF'
-          echo "$UPDATED_URLS"
-          echo 'EOF'
-        } >> "$GITHUB_OUTPUT"
 
     - name: Post URLs to Twitter
       id: post-urls
