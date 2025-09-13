@@ -17,6 +17,9 @@
   "scripts": {
     "test": "crosspost -h"
   },
+  "engines": {
+    "node": ">=18.18"
+  },
   "dependencies": {
     "@humanwhocodes/crosspost": "^0.17.0"
   }

@@ -3,6 +3,7 @@ import argparse
 import sys
 import fnmatch
 import requests
+import os
 from datetime import datetime, timedelta, timezone
 from lxml import etree
 
@@ -11,7 +12,7 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--sitemap-url", required=True)
     p.add_argument("--since", type=int, required=True)
-    p.add_argument("--since-unit", choices=["minutes", "hours", "days"], required=True)
+    p.add_argument("--since-unit", choices=["minutes", "hours", "days", "weeks"], required=True)
     p.add_argument("--exclude-urls", default="", help="Newline separated glob patterns")
     p.add_argument("--filter-urls", default="", help="Newline separated substrings")
     return p.parse_args()
@@ -19,7 +20,7 @@ def parse_args():
 
 def parse_since(since: int, unit: str) -> datetime:
     now = datetime.now(timezone.utc)
-    delta_map = {"minutes": "minutes", "hours": "hours", "days": "days"}
+    delta_map = {"minutes": "minutes", "hours": "hours", "days": "days", "weeks": "weeks"}
     return now - timedelta(**{delta_map[unit]: since})
 
 
@@ -59,9 +60,18 @@ def should_filter(url: str, filters: list[str]) -> bool:
     return any(f in url for f in filters)
 
 
+def gha_output(name: str, value: str):
+    """Append a multi-line output to GITHUB_OUTPUT file."""
+    path = os.environ.get("GITHUB_OUTPUT")
+    if not path:
+        return  # running locally, just ignore
+    with open(path, "a") as f:
+        f.write(f"{name}<<EOF\n{value}\nEOF\n")
+
+
 def main():
     args = parse_args()
-    since_ago = parse_since(args.since, args.since - unit)
+    since_ago = parse_since(args.since, args.since_unit)
     xml = fetch_sitemap(args.sitemap_url)
     candidates = set(extract_urls(xml, since_ago))
 
@@ -80,13 +90,8 @@ def main():
         processed.append(url)
 
     # Output both lists for GitHub Actions
-    print("latest-urls<<EOF")
-    print("\n".join(sorted(candidates)))
-    print("EOF")
-
-    print("processed-urls<<EOF")
-    print("\n".join(processed))
-    print("EOF")
+    gha_output("latest-urls", "\n".join(sorted(candidates)))
+    gha_output("processed-urls", "\n".join(processed))
 
 
 if __name__ == "__main__":

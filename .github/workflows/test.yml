@@ -24,17 +24,15 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v5
 
-    - uses: actions/setup-node@v5
-      with:
-        node-version-file: package.json
-        cache: npm
-
-    - name: Call action-crosspost
+    - name: Run action-crosspost
       uses: ./
       with:
+        dry-run: true
         sitemap-url: https://gagor.pro/sitemap.xml
         since: '2'
-        since-unit: month
+        since-unit: weeks
+        mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+        mastodon-host: mastodon.social
         exclude-urls: |
           https://gagor.pro/
           https://gagor.pro/author*
@@ -43,5 +41,4 @@ jobs:
           https://gagor.pro/posts/*
           https://gagor.pro/about/
         filter-urls: |
-          2025
-          2024
+          2025/08

@@ -7,7 +7,7 @@ inputs:
   since:
     description: Post only items newer than this (e.g. '1' 'since-unit' ago)
     required: false
-    default: '1'
+    default: "1"
   since-unit:
     description: Unit for 'since' input (e.g. minute, hour, day, week, month, year)
     required: false
@@ -15,7 +15,7 @@ inputs:
   limit:
     description: Maximum number of items to post. Use 0 for no limit.
     required: false
-    default: '5'
+    default: "5"
   failure-strategy:
     description: "Define how to handle failures. Options: ignore, error."
     required: false
@@ -27,106 +27,111 @@ inputs:
   exclude-urls:
     description: "Exclude URLs, that you don't want to be posted."
     required: false
-    default: ''
+    default: ""
   filter-urls:
     description: "Only include URLs that match this filter (e.g. /blog/)."
     required: false
-    default: ''
+    default: ""
 
   message:
     description: Message to include with the post. Use {url} to include the URL.
     required: false
-    default: '{url}'
+    default: "{url}"
+
+  dry-run:
+    description: If true, the action will only simulate posting without actually sending any posts.
+    required: false
+    default: "false"
 
   # Twitter
   twitter-access-token-key:
     description: Twitter Access Token Key
     required: false
-    default: ''
+    default: ""
   twitter-access-token-secret:
     description: Twitter Access Token Secret
     required: false
-    default: ''
+    default: ""
   twitter-api-consumer-key:
     description: Twitter API Consumer Key
     required: false
-    default: ''
+    default: ""
   twitter-api-consumer-secret:
     description: Twitter API Consumer Secret
     required: false
-    default: ''
+    default: ""
 
   # Mastodon
   mastodon-access-token:
     description: Mastodon Access Token
     required: false
-    default: ''
+    default: ""
   mastodon-host:
     description: Mastodon Host (e.g. mastodon.social)
     required: false
-    default: ''
+    default: ""
 
   # Bluesky
   bluesky-host:
     description: Bluesky Host (e.g. bsky.social)
     required: false
-    default: ''
+    default: ""
   bluesky-identifier:
     description: Bluesky Identifier (e.g. user.bsky.social)
     required: false
-    default: ''
+    default: ""
   bluesky-password:
     description: Bluesky Password for the account
     required: false
-    default: ''
+    default: ""
 
   # LinkedIn
   linkedin-access-token:
     description: LinkedIn Access Token
     required: false
-    default: ''
+    default: ""
 
   # Discord
   discord-bot-token:
     description: Discord Bot Token
     required: false
-    default: ''
+    default: ""
   discord-channel-id:
     description: Discord Channel ID
     required: false
-    default: ''
+    default: ""
 
   # Discord Webhook
   discord-webhook-url:
     description: Discord Webhook URL
     required: false
-    default: ''
+    default: ""
 
   # Dev.to
   devto-api-key:
     description: dev.to API Key
     required: false
-    default: ''
+    default: ""
 
   # Telegram
   telegram-bot-token:
     description: Telegram Bot Token
     required: false
-    default: ''
+    default: ""
   telegram-chat-id:
     description: Telegram Chat ID
     required: false
-    default: ''
+    default: ""
 
   # Slack
   slack-token:
     description: Slack Token
     required: false
-    default: ''
+    default: ""
   slack-channel:
     description: Slack Channel
     required: false
-    default: ''
+    default: ""
 
   # # General Crosspost .env
   # crosspost_detenv_file:
@@ -138,6 +143,10 @@ outputs:
   latest-urls:
     description: Latest URLs found in sitemap
     value: ${{ steps.get-urls.outputs.latest-urls }}
+  processed-urls:
+    description: Only filtered & non-excluded URLs
+    value: ${{ steps.get-urls.outputs.processed-urls }}
+
 runs:
   using: composite
   steps:
@@ -161,102 +170,6 @@ runs:
           --exclude-urls "${{ inputs.exclude-urls }}" \
           --filter-urls "${{ inputs.filter-urls }}"
 
-
-    # - name: Get URLs from Sitemap
-    #   shell: bash
-    #   id: get-urls
-    #   run: |
-    #     SITEMAP_URL="${{ inputs.sitemap-url }}"
-
-    #     # Get current time and since requested ago in ISO 8601
-    #     NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    #     SINCE_AGO=$(date -u -d '${{ inputs.since }} ${{ inputs.since-unit }} ago' +"%Y-%m-%dT%H:%M:%SZ")
-
-    #     # Fetch and parse sitemap, get URLs with lastmod since SINCE_AGO
-    #     UPDATED_URLS=$(curl -s "$SITEMAP_URL" | \
-    #       xmlstarlet sel -N x="http://www.sitemaps.org/schemas/sitemap/0.9" \
-    #         -t -m "//x:url" \
-    #         -v "x:loc" -o "|" -v "x:lastmod" -n | \
-    #       while IFS="|" read -r url lastmod; do
-    #         # Convert lastmod to UTC ISO 8601 (Z)
-    #         lastmod_iso=$(date -u -d "$lastmod" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
-    #         # If lastmod is empty or conversion failed, skip
-    #         if [[ -z "$lastmod_iso" ]]; then
-    #           continue
-    #         fi
-    #         # Compare lastmod to SINCE_AGO
-    #         if [[ "$lastmod_iso" > "$SINCE_AGO" ]]; then
-    #           echo "$url"
-    #         fi
-    #       done | sort -u)
-
-    #     if [[ -z "$UPDATED_URLS" ]]; then
-    #       echo "No URLs updated in the ${{ inputs.since }} ${{ inputs.since-unit }}."
-    #       exit 0
-    #     fi
-
-    #     # Iterate over each updated URL
-    #     echo "$UPDATED_URLS" | while read -r url; do
-    #       exclude=false
-    #       include=false
-
-    #       # -------------------------
-    #       # Exclusion pass (glob match)
-    #       # -------------------------
-    #       while IFS= read -r pattern; do
-    #         # strip comments and whitespace
-    #         pattern="${pattern%%#*}"
-    #         pattern="${pattern#"${pattern%%[![:space:]]*}"}"
-    #         pattern="${pattern%"${pattern##*[![:space:]]}"}"
-    #         [ -z "$pattern" ] && continue
-
-    #         case "$url" in
-    #           $pattern) exclude=true; break ;;
-    #         esac
-    #       done <<< "${{ inputs.exclude-urls }}"
-
-    #       $exclude && {
-    #         echo "Excluding URL: $url"
-    #         continue
-    #       }
-
-    #       # -------------------------
-    #       # Filter pass (substring match)
-    #       # -------------------------
-    #       if [ -n "${{ inputs.filter-urls }}" ]; then
-    #         while IFS= read -r pattern; do
-    #           # strip comments and whitespace
-    #           pattern="${pattern%%#*}"
-    #           pattern="${pattern#"${pattern%%[![:space:]]*}"}"
-    #           pattern="${pattern%"${pattern##*[![:space:]]}"}"
-    #           [ -z "$pattern" ] && continue
-
-    #           # substring check
-    #           if printf '%s' "$url" | grep -qF "$pattern"; then
-    #             include=true
-    #             break
-    #           fi
-    #         done <<< "${{ inputs.filter-urls }}"
-
-    #         # if no filter matched, skip
-    #         if ! $include; then
-    #           echo "Skipping (no filter match): $url"
-    #           continue
-    #         fi
-    #       fi
-
-    #       # -------------------------
-    #       # Process URL
-    #       # -------------------------
-    #       echo "Processing URL: $url"
-    #     done
-
-    #     {
-    #       echo 'latest-urls<<EOF'
-    #       echo "$UPDATED_URLS"
-    #       echo 'EOF'
-    #     } >> "$GITHUB_OUTPUT"
-
     - name: Install Node
       uses: actions/setup-node@v5
       with:
@@ -268,39 +181,40 @@ runs:
       run: |
         npm ci
 
-    - name: Post URLs to Twitter
+    - name: Post URLs with Crosspost
       id: post-urls
       shell: bash
-      if: ${{ steps.get-urls.outputs.latest-urls != '' }}
+      if: ${{ steps.get-urls.outputs.processed-urls }}
       env:
         MESSAGE: ${{ inputs.message }}
-        SENT_TO_TWITTER: ${{ (inputs.twitter-access-token-key && inputs.twitter-access-token-secret) || (inputs.twitter-api-consumer-key && inputs.twitter-api-consumer-secret) }}
+        SENT_TO_TWITTER: ${{ (inputs.twitter-access-token-key != '' && inputs.twitter-access-token-secret != '') || (inputs.twitter-api-consumer-key != '' && inputs.twitter-api-consumer-secret != '') }}
         TWITTER_ACCESS_TOKEN_KEY: ${{ inputs.twitter-access-token-key }}
         TWITTER_ACCESS_TOKEN_SECRET: ${{ inputs.twitter-access-token-secret }}
         TWITTER_API_CONSUMER_KEY: ${{ inputs.twitter-api-consumer-key }}
         TWITTER_API_CONSUMER_SECRET: ${{ inputs.twitter-api-consumer-secret }}
-        SENT_TO_MASTODON: ${{ inputs.mastodon-access-token && inputs.mastodon-host }}
+        SENT_TO_MASTODON: ${{ inputs.mastodon-access-token != '' && inputs.mastodon-host != '' }}
         MASTODON_ACCESS_TOKEN: ${{ inputs.mastodon-access-token }}
         MASTODON_HOST: ${{ inputs.mastodon-host }}
-        SENT_TO_BLUESKY: ${{ inputs.bluesky-host && inputs.bluesky-identifier && inputs.bluesky-password }}
+        SENT_TO_BLUESKY: ${{ inputs.bluesky-host != '' && inputs.bluesky-identifier != '' && inputs.bluesky-password != '' }}
         BLUESKY_HOST: ${{ inputs.bluesky-host }}
         BLUESKY_IDENTIFIER: ${{ inputs.bluesky-identifier }}
         BLUESKY_PASSWORD: ${{ inputs.bluesky-password }}
         SENT_TO_LINKEDIN: ${{ inputs.linkedin-access-token != '' }}
         LINKEDIN_ACCESS_TOKEN: ${{ inputs.linkedin-access-token }}
-        SENT_TO_DISCORD: ${{ inputs.discord-bot-token && inputs.discord-channel-id }}
+        SENT_TO_DISCORD: ${{ inputs.discord-bot-token != '' && inputs.discord-channel-id != '' }}
         DISCORD_BOT_TOKEN: ${{ inputs.discord-bot-token }}
         DISCORD_CHANNEL_ID: ${{ inputs.discord-channel-id }}
         SENT_TO_DISCORD_WEBHOOK: ${{ inputs.discord-webhook-url != '' }}
         DISCORD_WEBHOOK_URL: ${{ inputs.discord-webhook-url }}
         SENT_TO_DEVTO: ${{ inputs.devto-api-key != '' }}
         DEVTO_API_KEY: ${{ inputs.devto-api-key }}
-        SENT_TO_TELEGRAM: ${{ inputs.telegram-bot-token && inputs.telegram-chat-id }}
+        SENT_TO_TELEGRAM: ${{ inputs.telegram-bot-token != '' && inputs.telegram-chat-id != '' }}
         TELEGRAM_BOT_TOKEN: ${{ inputs.telegram-bot-token }}
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
-        SENT_TO_SLACK: ${{ inputs.slack-token && inputs.slack-channel }}
+        SENT_TO_SLACK: ${{ inputs.slack-token != '' && inputs.slack-channel != '' }}
         SLACK_TOKEN: ${{ inputs.slack-token }}
         SLACK_CHANNEL: ${{ inputs.slack-channel }}
+        DRY_RUN: ${{ inputs.dry-run == 'true' }}
       run: |
         cmd="npx crosspost"
         if [ "$SENT_TO_TWITTER" = "true" ]; then
@@ -338,7 +252,10 @@ runs:
           else
             final_cmd="$final_cmd \"$url\""
           fi
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "[Dry Run] $final_cmd"
+            continue
+          fi
           echo "Executing: $final_cmd"
-          # eval $final_cmd
-          echo $final_cmd
-        done <<< "${{ steps.get-urls.outputs.latest-urls }}"
+          eval $final_cmd
+        done <<< "${{ steps.get-urls.outputs.processed-urls }}"
