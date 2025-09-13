@@ -1,0 +1,23 @@
+{
+  "name": "action-crosspost",
+  "version": "0.0.1",
+  "description": "Automatically submits URLs to variety of social networks like: Bluesky, Mastodon, Twitter, LinedIn, Discord, Telgram, Dev.to.",
+  "homepage": "https://github.com/tgagor/action-crosspost#readme",
+  "bugs": {
+    "url": "https://github.com/tgagor/action-crosspost/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tgagor/action-crosspost.git"
+  },
+  "license": "GPL-3.0",
+  "author": "Tom <tomasz@gagor.pro>",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "crosspost -h"
+  },
+  "dependencies": {
+    "@humanwhocodes/crosspost": "^0.17.0"
+  }
+}
