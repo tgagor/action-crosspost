@@ -1,0 +1,41 @@
+name: Crosspost Action
+description: "Automatically submits URLs to variety of social networks like: Bluesky, Mastodon, Twitter, LinedIn, Discord, Telgram, Dev.to."
+inputs:
+  version:
+    description: Version of crosspost to install
+    required: false
+    default: latest
+outputs:
+  posted-urls:
+    description: Posted URLs
+    value: ${{ steps.post-urls.outputs.posted-urls }}
+runs:
+  using: composite
+  steps:
+    - name: Install Node
+      uses: actions/setup-node@v5
+      with:
+        node-version-file: package.json
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -x
+        npm ci
+
+    - name: Post URLs
+      id: post-urls
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        INPUT_URL: ${{ inputs.url }}
+        INPUT_MESSAGE: ${{ inputs.message }}
+        INPUT_TWITTER: ${{ inputs.twitter }}
+        INPUT_MASTODON: ${{ inputs.mastodon }}
+      run: |
+        set -x
+        npx crosspost
+        echo "posted-urls=$INPUT_URL" >> $GITHUB_OUTPUT
