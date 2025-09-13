@@ -25,6 +25,11 @@ inputs:
     required: false
     default: error
 
+  message:
+    description: Message to include with the post (use {url} as placeholder for the URL)
+    required: false
+    default: "New blog post: {url}"
+
   # Twitter
   twitter_access_token_key:
     description: Twitter Access Token Key
@@ -122,6 +127,9 @@ inputs:
   #   default: .env
 
 outputs:
+  latest-urls:
+    description: Latest URLs found in sitemap
+    value: ${{ steps.get-urls.outputs.latest-urls }}
   posted-urls:
     description: Posted URLs
     value: ${{ steps.post-urls.outputs.posted-urls }}
@@ -140,18 +148,55 @@ runs:
         VERSION: ${{ inputs.version }}
       run: |
         set -x
+        sudo apt-get update && sudo apt-get install -y jq xmlstarlet
         npm ci
+
+    - name: Get URLs from Sitemap
+      shell: bash
+      id: get-urls
+      run: |
+        SITEMAP_URL="${{ inputs.sitemap-url }}"
+
+        # Get current time and since requested ago in ISO 8601
+        NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        SINCE_AGO=$(date -u -d '${{ input.since }} ${{ input.since-unit }} ago' +"%Y-%m-%dT%H:%M:%SZ")
+
+        # Fetch and parse sitemap, get URLs with lastmod since SINCE_AGO
+        UPDATED_URLS=$(curl -s "$SITEMAP_URL" | \
+          xmlstarlet sel -N x="http://www.sitemaps.org/schemas/sitemap/0.9" \
+            -t -m "//x:url" \
+            -v "x:loc" -o "|" -v "x:lastmod" -n | \
+          while IFS="|" read -r url lastmod; do
+            # Convert lastmod to UTC ISO 8601 (Z)
+            lastmod_iso=$(date -u -d "$lastmod" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "")
+            # If lastmod is empty or conversion failed, skip
+            if [[ -z "$lastmod_iso" ]]; then
+              continue
+            fi
+            # Compare lastmod to SINCE_AGO
+            if [[ "$lastmod_iso" > "$SINCE_AGO" ]]; then
+              echo "$url"
+            fi
+          done | sort -u)
+
+        if [[ -z "$UPDATED_URLS" ]]; then
+          echo "No URLs updated in the ${{ input.since }} ${{ input.since-unit }}."
+          exit 0
+        fi
+
+        # Iterate over each updated URL and notify all search engines
+        echo "$UPDATED_URLS" | while read -r url; do
+          echo "Processing URL: $url"
+        done
+
+        echo "latest-urls=$UPDATED_URLS" >> $GITHUB_OUTPUT
 
     - name: Post URLs
       id: post-urls
       shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        INPUT_URL: ${{ inputs.url }}
         INPUT_MESSAGE: ${{ inputs.message }}
-        INPUT_TWITTER: ${{ inputs.twitter }}
-        INPUT_MASTODON: ${{ inputs.mastodon }}
       run: |
         set -x
-        npx crosspost
+        npx crosspost --version
         echo "posted-urls=$INPUT_URL" >> $GITHUB_OUTPUT
