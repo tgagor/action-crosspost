@@ -7,8 +7,8 @@ on:
       - 'CONTRIBUTING.md'
     branches:
       - main
-      - feature/*
-      - bugfix/*
+      # - feature/*
+      # - bugfix/*
   pull_request:
     branches:
       - main
