@@ -1,10 +1,126 @@
 name: Crosspost Action
 description: "Automatically submits URLs to variety of social networks like: Bluesky, Mastodon, Twitter, LinedIn, Discord, Telgram, Dev.to."
 inputs:
-  version:
-    description: Version of crosspost to install
+  sitemap-url:
+    description: URL to sitemap.xml
+    required: true
+  since:
+    description: Post only items newer than this (e.g. '1' 'since-unit' ago)
     required: false
-    default: latest
+    default: '1'
+  since-unit:
+    description: Unit for 'since' input (e.g. minute, hour, day, week, month, year)
+    required: false
+    default: day
+  limit:
+    description: Maximum number of items to post
+    required: false
+    default: '100'
+  failure-strategy:
+    description: "Define how to handle failures. Options: ignore, error."
+    required: false
+    default: ignore
+  lastmod-required:
+    description: "Define the behavior when lastmod tag is not present in sitemap. Options: ignore, error."
+    required: false
+    default: error
+
+  # Twitter
+  twitter_access_token_key:
+    description: Twitter Access Token Key
+    required: false
+    default: ''
+  twitter_access_token_secret:
+    description: Twitter Access Token Secret
+    required: false
+    default: ''
+  twitter_api_consumer_key:
+    description: Twitter API Consumer Key
+    required: false
+    default: ''
+  twitter_api_consumer_secret:
+    description: Twitter API Consumer Secret
+    required: false
+    default: ''
+
+  # Mastodon
+  mastodon_access_token:
+    description: Mastodon Access Token
+    required: false
+    default: ''
+  mastodon_host:
+    description: Mastodon Host (e.g. mastodon.social)
+    required: false
+    default: ''
+
+  # Bluesky
+  bluesky_host:
+    description: Bluesky Host (e.g. bsky.social)
+    required: false
+    default: ''
+  bluesky_identifier:
+    description: Bluesky Identifier (e.g. user.bsky.social)
+    required: false
+    default: ''
+  bluesky_password:
+    description: Bluesky Password for the account
+    required: false
+    default: ''
+
+  # LinkedIn
+  linkedin_access_token:
+    description: LinkedIn Access Token
+    required: false
+    default: ''
+
+  # Discord
+  discord_bot_token:
+    description: Discord Bot Token
+    required: false
+    default: ''
+  discord_channel_id:
+    description: Discord Channel ID
+    required: false
+    default: ''
+
+  # Discord Webhook
+  discord_webhook_url:
+    description: Discord Webhook URL
+    required: false
+    default: ''
+
+  # Dev.to
+  devto_api_key:
+    description: dev.to API Key
+    required: false
+    default: ''
+
+  # Telegram
+  telegram_bot_token:
+    description: Telegram Bot Token
+    required: false
+    default: ''
+  telegram_chat_id:
+    description: Telegram Chat ID
+    required: false
+    default: ''
+
+  # Slack
+  slack_token:
+    description: Slack Token
+    required: false
+    default: ''
+  slack_channel:
+    description: Slack Channel
+    required: false
+    default: ''
+
+  # # General Crosspost .env
+  # crosspost_detenv_file:
+  #   description: Crosspost .env file path
+  #   required: false
+  #   default: .env
+
 outputs:
   posted-urls:
     description: Posted URLs

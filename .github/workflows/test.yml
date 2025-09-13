@@ -1,0 +1,35 @@
+name: Test action-crosspost
+
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+    branches:
+    #   - main
+      - feature/*
+      - bugfix/*
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v5
+
+    - uses: actions/setup-node@v5
+      with:
+        node-version-file: package.json
+        cache: npm
+
+    - name: Call action-crosspost
+      uses: ./
+      with:
+        sitemap-url: https://tgagor.pro/sitemap.xml
