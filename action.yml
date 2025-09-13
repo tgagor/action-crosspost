@@ -159,7 +159,7 @@ runs:
 
         # Get current time and since requested ago in ISO 8601
         NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-        SINCE_AGO=$(date -u -d '${{ input.since }} ${{ input.since-unit }} ago' +"%Y-%m-%dT%H:%M:%SZ")
+        SINCE_AGO=$(date -u -d '${{ inputs.since }} ${{ inputs.since-unit }} ago' +"%Y-%m-%dT%H:%M:%SZ")
 
         # Fetch and parse sitemap, get URLs with lastmod since SINCE_AGO
         UPDATED_URLS=$(curl -s "$SITEMAP_URL" | \
@@ -180,7 +180,7 @@ runs:
           done | sort -u)
 
         if [[ -z "$UPDATED_URLS" ]]; then
-          echo "No URLs updated in the ${{ input.since }} ${{ input.since-unit }}."
+          echo "No URLs updated in the ${{ inputs.since }} ${{ inputs.since-unit }}."
           exit 0
         fi
 
