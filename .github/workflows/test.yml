@@ -18,7 +18,7 @@ defaults:
     shell: bash
 
 jobs:
-  build:
+  test-run:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -32,4 +32,16 @@ jobs:
     - name: Call action-crosspost
       uses: ./
       with:
-        sitemap-url: https://tgagor.pro/sitemap.xml
+        sitemap-url: https://gagor.pro/sitemap.xml
+        since: '2'
+        since-unit: month
+        exclude-urls: |
+          https://gagor.pro/
+          https://gagor.pro/author*
+          https://gagor.pro/tags/*
+          https://gagor.pro/categories/*
+          https://gagor.pro/posts/*
+          https://gagor.pro/about/
+        filter-urls: |
+          2025
+          2024
