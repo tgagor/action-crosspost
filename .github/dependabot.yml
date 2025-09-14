@@ -4,7 +4,6 @@ updates:
     directory: /scripts/
     schedule:
       interval: monthly
-  - package-ecosystem: github-actions
   - package-ecosystem: npm
     directory: /
     schedule:

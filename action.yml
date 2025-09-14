@@ -1,5 +1,8 @@
 name: Crosspost Action
 description: "Automatically submits URLs to variety of social networks like: Bluesky, Mastodon, Twitter, LinedIn, Discord, Telgram, Dev.to."
+branding:
+  icon: send
+  color: blue
 inputs:
   feed-url:
     description: URL to sitemap.xml, rss.xml or atom.xml
