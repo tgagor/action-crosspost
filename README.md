@@ -1,5 +1,10 @@
 # action-crosspost
 
+[![GitHub release](https://img.shields.io/github/v/release/tgagor/action-crosspost?logo=github)](https://github.com/tgagor/action-crosspost/releases)
+[![CI](https://github.com/tgagor/action-crosspost/actions/workflows/build.yml/badge.svg)](https://github.com/tgagor/action-crosspost/actions/workflows/build.yml)
+[![License](https://img.shields.io/github/license/tgagor/action-crosspost)](https://github.com/tgagor/action-crosspost/blob/main/LICENSE)
+[![Issues](https://img.shields.io/github/issues/tgagor/action-crosspost)](https://github.com/tgagor/action-crosspost/issues)
+
 **Crosspost your latest content to social media directly from GitHub Actions.**
 This action fetches URLs from a `sitemap.xml` or RSS/Atom feed, filters them by age, and posts them to your configured social networks using [humanwhocodes/crosspost](https://github.com/humanwhocodes/crosspost).
 
