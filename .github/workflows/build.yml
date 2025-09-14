@@ -114,8 +114,7 @@ jobs:
 
       - name: Move major version tag
         run: |
-          # Find tag (vX.Y.Z) that points to this commit
-          VERSION_TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          VERSION_TAG=${{ steps.tag_version.outputs.new_tag }}
 
           if [ -z "$VERSION_TAG" ]; then
             echo "No version tag found on this commit, skipping."
