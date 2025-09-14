@@ -1,4 +1,4 @@
-name: Test action-crosspost
+name: Smoke test action-crosspost
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
       - 'README.md'
       - 'CONTRIBUTING.md'
     branches:
-    #   - main
       - feature/*
       - bugfix/*
   pull_request:
@@ -23,6 +22,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
 
     - name: Run action-crosspost on a test sitemap
       uses: ./
@@ -30,7 +31,7 @@ jobs:
         dry-run: true
         feed-url: https://gagor.pro/sitemap.xml
         since: '2'
-        since-unit: weeks
+        since-unit: years
         mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
         mastodon-host: mastodon.social
         exclude-urls: |
@@ -48,7 +49,7 @@ jobs:
       with:
         dry-run: true
         feed-url: https://gagor.pro/index.xml
-        since: '10'
+        since: '4'
         since-unit: weeks
         mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
         mastodon-host: mastodon.social

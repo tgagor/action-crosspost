@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import argparse
-import sys
 import fnmatch
-import requests
 import os
-from datetime import datetime, timedelta, timezone
+import sys
+from datetime import datetime, timezone
+
+import requests
+from dateutil.relativedelta import relativedelta
 from usp.fetch_parse import SitemapFetcher
 
 
@@ -12,16 +14,42 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--feed-url", required=True)
     p.add_argument("--since", type=int, required=True)
-    p.add_argument("--since-unit", choices=["minutes", "hours", "days", "weeks"], required=True)
-    p.add_argument("--exclude-urls", default="", help="Newline separated glob patterns")
-    p.add_argument("--filter-urls", default="", help="Newline separated substrings")
+    p.add_argument(
+        "--since-unit",
+        choices=[
+            "minute", "minutes",
+            "hour", "hours",
+            "day", "days",
+            "week", "weeks",
+            "month", "months",
+            "year", "years"],
+        required=True,
+    )
+    p.add_argument("--exclude-urls", default="",
+                   help="Newline separated glob patterns")
+    p.add_argument("--filter-urls", default="",
+                   help="Newline separated substrings")
     return p.parse_args()
 
 
-def parse_since(since: int, unit: str) -> datetime:
+def parse_since(amount: int, unit: str) -> datetime:
+    """
+    Return a datetime `amount` units ago from now (UTC).
+    Supports minutes, hours, days, weeks, months, years.
+    Accepts singular/plural forms (e.g. "1 day", "2 days").
+    """
     now = datetime.now(timezone.utc)
-    delta_map = {"minutes": "minutes", "hours": "hours", "days": "days", "weeks": "weeks"}
-    return now - timedelta(**{delta_map[unit]: since})
+
+    # normalize unit (strip whitespace, lowercase, singularize)
+    unit = unit.strip().lower()
+    if unit.endswith("s"):
+        unit = unit[:-1]
+
+    valid_units = {"minute", "hour", "day", "week", "month", "year"}
+    if unit not in valid_units:
+        raise ValueError(f"Unsupported unit: {unit}")
+
+    return now - relativedelta(**{unit + "s": amount})
 
 
 def fetch_feed(url: str):
@@ -42,11 +70,10 @@ def extract_urls(root_url: str, since_ago: datetime):
     for page in tree.all_pages():
         url = page.url
         lastmod = None
-        if page.last_modified != None:
+        if page.last_modified:
             lastmod = page.last_modified
-        elif page.news_story:
-            if page.news_story.publish_date != None:
-                lastmod = page.news_story.publish_date
+        elif page.news_story and page.news_story.publish_date:
+            lastmod = page.news_story.publish_date
 
         if lastmod and lastmod > since_ago:
             results.append((lastmod, url))
@@ -58,10 +85,7 @@ def extract_urls(root_url: str, since_ago: datetime):
 
 
 def should_exclude(url: str, patterns: list[str]) -> bool:
-    for pat in patterns:
-        if fnmatch.fnmatch(url, pat):
-            return True
-    return False
+    return any(fnmatch.fnmatch(url, pat) for pat in patterns)
 
 
 def should_filter(url: str, filters: list[str]) -> bool:
@@ -84,8 +108,10 @@ def main():
     since_ago = parse_since(args.since, args.since_unit)
     candidates = set(extract_urls(args.feed_url, since_ago))
 
-    exclude_patterns = [p.strip() for p in args.exclude_urls.splitlines() if p.strip()]
-    filter_patterns = [p.strip() for p in args.filter_urls.splitlines() if p.strip()]
+    exclude_patterns = [p.strip()
+                        for p in args.exclude_urls.splitlines() if p.strip()]
+    filter_patterns = [p.strip()
+                       for p in args.filter_urls.splitlines() if p.strip()]
 
     processed = []
     for url in sorted(candidates):

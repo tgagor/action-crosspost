@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-import os
-import sys
-import subprocess
 import argparse
+import os
+import subprocess
+import sys
+
 
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--urls", required=True)
     p.add_argument("--limit", type=int, required=True)
-    p.add_argument("--failure-strategy", choices=["ignore", "error"], default="ignore")
+    p.add_argument("--failure-strategy",
+                   choices=["ignore", "error"], default="ignore")
     p.add_argument("--dry-run", default=False, action="store_true")
     p.add_argument("--message", default="{url}")
     return p.parse_args()
+
 
 def build_crosspost_cmd(message, url):
     cmd = ["npx", "crosspost"]
