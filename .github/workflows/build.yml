@@ -34,11 +34,6 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v5
 
-    - uses: actions/setup-node@v5
-      with:
-        node-version-file: package.json
-        cache: npm
-
     - name: Guess next version
       id: guessed_tag_version
       uses: mathieudutour/github-tag-action@v6.2
@@ -50,20 +45,6 @@ jobs:
       env:
         VERSION_TAG: ${{ steps.guessed_tag_version.outputs.new_tag }}
       run: echo "VERSION=$(echo $VERSION_TAG | sed -e "s/^v//" -e "s/-.*$//")" >> $GITHUB_ENV
-
-    - name: Build
-      id: build
-      env:
-        GOOS: ${{ matrix.os }}
-        GOARCH: ${{ matrix.arch }}
-      run: |
-        set -x
-
-        npm ci
-
-    - name: Show installed version
-      run: |
-        npx crosspost --version
 
   pre-commit:
     name: pre-commit checks
