@@ -157,18 +157,19 @@ runs:
       uses: astral-sh/setup-uv@v6
       with:
         enable-cache: true
+        cache-dependency-glob: "${{ github.action_path }}/**/pyproject.toml"
 
     - name: Install Python deps
       shell: bash
       run: |
         uv venv
-        uv pip install -r scripts/pyproject.toml
+        uv pip install -r ${{ github.action_path }}/scripts/pyproject.toml
 
     - name: Get URLs from Sitemap
       id: get-urls
       shell: bash
       run: |
-        uv run python scripts/get_urls.py \
+        uv run python ${{ github.action_path }}/scripts/get_urls.py \
           --feed-url "${{ inputs.feed-url }}" \
           --since "${{ inputs.since }}" \
           --since-unit "${{ inputs.since-unit }}" \
@@ -179,14 +180,12 @@ runs:
       if: ${{ steps.get-urls.outputs.processed-urls }}
       uses: actions/setup-node@v5
       with:
-        node-version-file: package.json
-        cache: npm
+        node-version: 22.x
 
     - name: Install crosspost
       if: ${{ steps.get-urls.outputs.processed-urls }}
       shell: bash
-      run: |
-        npm ci
+      run: npm ci
 
     - name: Post URLs with Crosspost
       if: ${{ steps.get-urls.outputs.processed-urls }}
@@ -216,7 +215,7 @@ runs:
         LIMIT: ${{ inputs.limit }}
         FAILURE_STRATEGY: ${{ inputs.failure-strategy }}
       run: |
-        uv run python scripts/post_urls.py \
+        uv run python ${{ github.action_path }}/scripts/post_urls.py \
           --urls "${{ steps.get-urls.outputs.processed-urls }}" \
           --limit "$LIMIT" \
           --failure-strategy "$FAILURE_STRATEGY" \

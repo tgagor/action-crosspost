@@ -11,7 +11,7 @@
     "url": "git+https://github.com/tgagor/action-crosspost.git"
   },
   "license": "GPL-3.0",
-  "author": "Tom <tomasz@gagor.pro>",
+  "author": "Tom <https://github.com/tgagor>",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
