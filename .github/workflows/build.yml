@@ -49,7 +49,7 @@ jobs:
     needs: build
     steps:
     - name: Run action-crosspost on a test sitemap
-      uses: tgagor/action-crosspost@${{ github.sha }}
+      uses: ./
       with:
         dry-run: true
         feed-url: https://gagor.pro/sitemap.xml
