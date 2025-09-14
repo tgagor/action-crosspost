@@ -48,6 +48,10 @@ jobs:
             arch: arm64 # Windows ARM64 is a niche
     needs: build
     steps:
+    - name: Checkout Code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
     - name: Run action-crosspost on a test sitemap
       uses: ./
       with:
