@@ -185,7 +185,8 @@ runs:
     - name: Install crosspost
       if: ${{ steps.get-urls.outputs.processed-urls }}
       shell: bash
-      run: npm ci
+      run: |
+        npm install -g "@humanwhocodes/crosspost@0.17.0"
 
     - name: Post URLs with Crosspost
       if: ${{ steps.get-urls.outputs.processed-urls }}
