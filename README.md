@@ -1,5 +1,6 @@
 # action-crosspost
 
+[![GitHub Marketplace](https://img.shields.io/badge/marketplace-action--crosspost-blue?logo=github)](https://github.com/marketplace/actions/crosspost-action)
 [![GitHub release](https://img.shields.io/github/v/release/tgagor/action-crosspost?logo=github)](https://github.com/tgagor/action-crosspost/releases)
 [![CI](https://github.com/tgagor/action-crosspost/actions/workflows/build.yml/badge.svg)](https://github.com/tgagor/action-crosspost/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/tgagor/action-crosspost)](https://github.com/tgagor/action-crosspost/blob/main/LICENSE)
