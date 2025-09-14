@@ -1,8 +1,8 @@
 name: Crosspost Action
 description: "Automatically submits URLs to variety of social networks like: Bluesky, Mastodon, Twitter, LinedIn, Discord, Telgram, Dev.to."
 inputs:
-  sitemap-url:
-    description: URL to sitemap.xml
+  feed-url:
+    description: URL to sitemap.xml, rss.xml or atom.xml
     required: true
   since:
     description: Post only items newer than this (e.g. '1' 'since-unit' ago)
@@ -166,7 +166,7 @@ runs:
       shell: bash
       run: |
         uv run python scripts/get_urls.py \
-          --sitemap-url "${{ inputs.sitemap-url }}" \
+          --feed-url "${{ inputs.feed-url }}" \
           --since "${{ inputs.since }}" \
           --since-unit "${{ inputs.since-unit }}" \
           --exclude-urls "${{ inputs.exclude-urls }}" \

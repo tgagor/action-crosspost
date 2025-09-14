@@ -5,12 +5,12 @@ import fnmatch
 import requests
 import os
 from datetime import datetime, timedelta, timezone
-from lxml import etree
+from usp.tree import sitemap_tree_for_homepage
 
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--sitemap-url", required=True)
+    p.add_argument("--feed-url", required=True)
     p.add_argument("--since", type=int, required=True)
     p.add_argument("--since-unit", choices=["minutes", "hours", "days", "weeks"], required=True)
     p.add_argument("--exclude-urls", default="", help="Newline separated glob patterns")
@@ -24,27 +24,37 @@ def parse_since(since: int, unit: str) -> datetime:
     return now - timedelta(**{delta_map[unit]: since})
 
 
-def fetch_sitemap(url: str):
+def fetch_feed(url: str):
     r = requests.get(url, timeout=30)
     r.raise_for_status()
     return r.content
 
 
-def extract_urls(xml_bytes: bytes, since_ago: datetime):
-    ns = {"x": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-    tree = etree.fromstring(xml_bytes)
-    for url_el in tree.xpath("//x:url", namespaces=ns):
-        loc = url_el.find("x:loc", ns)
-        lastmod = url_el.find("x:lastmod", ns)
-        if loc is None or lastmod is None:
-            continue
-        url = loc.text.strip()
-        try:
-            lm = datetime.fromisoformat(lastmod.text.strip().replace("Z", "+00:00"))
-        except Exception:
-            continue
-        if lm > since_ago:
-            yield url
+def extract_urls(root_url: str, since_ago: datetime):
+    """
+    Fetch and parse sitemap(s) or RSS feeds, returning URLs modified since `since_ago`,
+    sorted from freshest to oldest.
+    """
+    tree = sitemap_tree_for_homepage(root_url)
+    results = []
+
+    for page in tree.all_pages():
+        url = page.url
+        lastmod = page.lastmod  # this may be None if not available
+
+        if lastmod:
+            try:
+                lm = datetime.fromisoformat(lastmod.strip().replace("Z", "+00:00"))
+            except Exception:
+                continue
+
+            if lm > since_ago:
+                results.append((lm, url))
+
+    # sort newest -> oldest
+    results.sort(key=lambda tup: tup[0], reverse=True)
+
+    return [url for _, url in results]
 
 
 def should_exclude(url: str, patterns: list[str]) -> bool:
@@ -72,7 +82,7 @@ def gha_output(name: str, value: str):
 def main():
     args = parse_args()
     since_ago = parse_since(args.since, args.since_unit)
-    xml = fetch_sitemap(args.sitemap_url)
+    xml = fetch_feed(args.feed_url)
     candidates = set(extract_urls(xml, since_ago))
 
     exclude_patterns = [p.strip() for p in args.exclude_urls.splitlines() if p.strip()]

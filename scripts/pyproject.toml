@@ -5,6 +5,5 @@ description = "A set of helper scripts"
 readme = "../README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "lxml>=6.0.1",
-    "requests>=2.32.5",
+    "ultimate-sitemap-parser>=1.6.0",
 ]
