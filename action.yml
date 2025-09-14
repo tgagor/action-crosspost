@@ -152,12 +152,13 @@ runs:
   steps:
     - name: Install uv
       uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
 
     - name: Install Python deps
       shell: bash
       run: |
-        uv venv
-        uv pip install requests lxml
+        uv pip install -r scripts/pyproject.toml
 
     - name: Get URLs from Sitemap
       id: get-urls
