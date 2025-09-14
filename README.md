@@ -64,19 +64,53 @@ Here are the most important inputs (see [`action.yml`](./action.yml) for the ful
 
 The action accepts credentials as inputs and maps them to environment variables expected by **crosspost**. Examples:
 
-* **Mastodon**
+- **Mastodon**
+  - `mastodon-access-token` → `MASTODON_ACCESS_TOKEN`
+  - `mastodon-host` → `MASTODON_URL`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#mastodon).
 
-  * `mastodon-access-token` → `MASTODON_ACCESS_TOKEN`
-  * `mastodon-host` → `MASTODON_URL`
+- **Twitter/X**
+  - `twitter-access-token-key`
+  - `twitter-access-token-secret`
+  - `twitter-api-consumer-key`
+  - `twitter-api-consumer-secret`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#twitter).
 
-* **Twitter/X**
+- **Bluesky**
+  - `bluesky-host`
+  - `bluesky-identifier`
+  - `bluesky-password`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#mastodon).
 
-  * `twitter-api-key`
-  * `twitter-api-secret`
-  * `twitter-access-token`
-  * `twitter-access-secret`
+- **LinkedIn**
+  - `linkedin-access-token`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#linkedin).
 
-…and so on for other networks supported by [crosspost](https://github.com/humanwhocodes/crosspost#options).
+- **Discord Bot**
+  - `discord-bot-token`
+  - `discord-channel-id`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#discord-bot).
+
+- **Discord Webhook**
+  - `discord-webhook-url`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#discord-webhook).
+
+- **Dev.to**
+  - `devto-api-key`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#devto).
+
+- **Telegram**
+  - `telegram-bot-token`
+  - `telegram-chat-id`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#telegram).
+
+- **Slack**
+  - `slack-token`
+  - `slack-channel`
+  - [more on configuration details](https://github.com/humanwhocodes/crosspost?tab=readme-ov-file#slack).
+
+
+...and so on for other networks supported by [crosspost](https://github.com/humanwhocodes/crosspost#options).
 
 Use **GitHub secrets** for these values.
 

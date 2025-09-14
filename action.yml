@@ -136,12 +136,6 @@ inputs:
     required: false
     default: ""
 
-  # # General Crosspost .env
-  # crosspost_detenv_file:
-  #   description: Crosspost .env file path
-  #   required: false
-  #   default: .env
-
 outputs:
   latest-urls:
     description: Latest URLs found in sitemap
