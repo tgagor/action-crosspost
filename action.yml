@@ -17,7 +17,7 @@ inputs:
     required: false
     default: "5"
   failure-strategy:
-    description: "Define how to handle failures. Options: ignore, error."
+    description: "Define how to handle failures. Options: ignore, fail."
     required: false
     default: ignore
   lastmod-required:
@@ -189,75 +189,30 @@ runs:
       if: ${{ steps.get-urls.outputs.processed-urls }}
       env:
         MESSAGE: ${{ inputs.message }}
-        SENT_TO_TWITTER: ${{ (inputs.twitter-access-token-key != '' && inputs.twitter-access-token-secret != '') || (inputs.twitter-api-consumer-key != '' && inputs.twitter-api-consumer-secret != '') }}
         TWITTER_ACCESS_TOKEN_KEY: ${{ inputs.twitter-access-token-key }}
         TWITTER_ACCESS_TOKEN_SECRET: ${{ inputs.twitter-access-token-secret }}
         TWITTER_API_CONSUMER_KEY: ${{ inputs.twitter-api-consumer-key }}
         TWITTER_API_CONSUMER_SECRET: ${{ inputs.twitter-api-consumer-secret }}
-        SENT_TO_MASTODON: ${{ inputs.mastodon-access-token != '' && inputs.mastodon-host != '' }}
         MASTODON_ACCESS_TOKEN: ${{ inputs.mastodon-access-token }}
         MASTODON_HOST: ${{ inputs.mastodon-host }}
-        SENT_TO_BLUESKY: ${{ inputs.bluesky-host != '' && inputs.bluesky-identifier != '' && inputs.bluesky-password != '' }}
         BLUESKY_HOST: ${{ inputs.bluesky-host }}
         BLUESKY_IDENTIFIER: ${{ inputs.bluesky-identifier }}
         BLUESKY_PASSWORD: ${{ inputs.bluesky-password }}
-        SENT_TO_LINKEDIN: ${{ inputs.linkedin-access-token != '' }}
         LINKEDIN_ACCESS_TOKEN: ${{ inputs.linkedin-access-token }}
-        SENT_TO_DISCORD: ${{ inputs.discord-bot-token != '' && inputs.discord-channel-id != '' }}
         DISCORD_BOT_TOKEN: ${{ inputs.discord-bot-token }}
         DISCORD_CHANNEL_ID: ${{ inputs.discord-channel-id }}
-        SENT_TO_DISCORD_WEBHOOK: ${{ inputs.discord-webhook-url != '' }}
         DISCORD_WEBHOOK_URL: ${{ inputs.discord-webhook-url }}
-        SENT_TO_DEVTO: ${{ inputs.devto-api-key != '' }}
         DEVTO_API_KEY: ${{ inputs.devto-api-key }}
-        SENT_TO_TELEGRAM: ${{ inputs.telegram-bot-token != '' && inputs.telegram-chat-id != '' }}
         TELEGRAM_BOT_TOKEN: ${{ inputs.telegram-bot-token }}
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
-        SENT_TO_SLACK: ${{ inputs.slack-token != '' && inputs.slack-channel != '' }}
         SLACK_TOKEN: ${{ inputs.slack-token }}
         SLACK_CHANNEL: ${{ inputs.slack-channel }}
         DRY_RUN: ${{ inputs.dry-run == 'true' }}
+        LIMIT: ${{ inputs.limit }}
+        FAILURE_STRATEGY: ${{ inputs.failure-strategy }}
       run: |
-        cmd="npx crosspost"
-        if [ "$SENT_TO_TWITTER" = "true" ]; then
-          cmd="$cmd --twitter"
-        fi
-        if [ "$SENT_TO_MASTODON" = "true" ]; then
-          cmd="$cmd --mastodon"
-        fi
-        if [ "$SENT_TO_BLUESKY" = "true" ]; then
-          cmd="$cmd --bluesky"
-        fi
-        if [ "$SENT_TO_LINKEDIN" = "true" ]; then
-          cmd="$cmd --linkedin"
-        fi
-        if [ "$SENT_TO_DISCORD" = "true" ]; then
-          cmd="$cmd --discord"
-        fi
-        if [ "$SENT_TO_DISCORD_WEBHOOK" = "true" ]; then
-          cmd="$cmd --discord-webhook"
-        fi
-        if [ "$SENT_TO_DEVTO" = "true" ]; then
-          cmd="$cmd --devto"
-        fi
-        if [ "$SENT_TO_TELEGRAM" = "true" ]; then
-          cmd="$cmd --telegram"
-        fi
-        if [ "$SENT_TO_SLACK" = "true" ]; then
-          cmd="$cmd --slack"
-        fi
-        while IFS= read -r url; do
-          final_cmd="$cmd"
-          if [ -n "$MESSAGE" ]; then
-            msg="${MESSAGE//\{url\}/$url}"
-            final_cmd="$final_cmd \"$msg\""
-          else
-            final_cmd="$final_cmd \"$url\""
-          fi
-          if [ "$DRY_RUN" = "true" ]; then
-            echo "[Dry Run] $final_cmd"
-            continue
-          fi
-          echo "Executing: $final_cmd"
-          eval $final_cmd
-        done <<< "${{ steps.get-urls.outputs.processed-urls }}"
+        uv run python scripts/post_urls.py \
+          --urls "${{ steps.get-urls.outputs.processed-urls }}" \
+          --limit "$LIMIT" \
+          --failure-strategy "$FAILURE_STRATEGY" \
+          ${DRY_RUN:+--dry-run}
