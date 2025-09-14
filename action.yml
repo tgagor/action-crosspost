@@ -173,20 +173,22 @@ runs:
           --filter-urls "${{ inputs.filter-urls }}"
 
     - name: Install Node
+      if: ${{ steps.get-urls.outputs.processed-urls }}
       uses: actions/setup-node@v5
       with:
         node-version-file: package.json
         cache: npm
 
     - name: Install crosspost
+      if: ${{ steps.get-urls.outputs.processed-urls }}
       shell: bash
       run: |
         npm ci
 
     - name: Post URLs with Crosspost
+      if: ${{ steps.get-urls.outputs.processed-urls }}
       id: post-urls
       shell: bash
-      if: ${{ steps.get-urls.outputs.processed-urls }}
       env:
         MESSAGE: ${{ inputs.message }}
         TWITTER_ACCESS_TOKEN_KEY: ${{ inputs.twitter-access-token-key }}

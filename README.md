@@ -7,3 +7,5 @@ Automatically submits URLs to variety of social networks like: Bluesky,  Mastodo
 - add support for sitemapindex sitemaps, for ex.: view-source:https://nerdlicht.net/sitemap.xml
 - handle sitemaps without "lastmod" attributes
 - add tests for Python scripts logic
+- add support for timeframes bigger than `week`, like: `month`, `year`.
+- handle properly `since-unit` with plural names, eg: `days`, `months`.

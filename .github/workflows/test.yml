@@ -24,11 +24,11 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v5
 
-    - name: Run action-crosspost
+    - name: Run action-crosspost on a test sitemap
       uses: ./
       with:
         dry-run: true
-        sitemap-url: https://gagor.pro/sitemap.xml
+        feed-url: https://gagor.pro/sitemap.xml
         since: '2'
         since-unit: weeks
         mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
@@ -42,3 +42,18 @@ jobs:
           https://gagor.pro/about/
         filter-urls: |
           2025/08
+
+    - name: Run action-crosspost on a test RSS feed
+      uses: ./
+      with:
+        dry-run: true
+        feed-url: https://gagor.pro/index.xml
+        since: '10'
+        since-unit: weeks
+        mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+        mastodon-host: mastodon.social
+        exclude-urls: |
+          https://gagor.pro/
+          https://gagor.pro/about/
+        filter-urls: |
+          book

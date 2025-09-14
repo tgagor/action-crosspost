@@ -5,7 +5,7 @@ import fnmatch
 import requests
 import os
 from datetime import datetime, timedelta, timezone
-from usp.tree import sitemap_tree_for_homepage
+from usp.fetch_parse import SitemapFetcher
 
 
 def parse_args():
@@ -35,21 +35,21 @@ def extract_urls(root_url: str, since_ago: datetime):
     Fetch and parse sitemap(s) or RSS feeds, returning URLs modified since `since_ago`,
     sorted from freshest to oldest.
     """
-    tree = sitemap_tree_for_homepage(root_url)
+    # tree = sitemap_tree_for_homepage(root_url)
+    tree = SitemapFetcher(url=root_url, recursion_level=0).sitemap()
     results = []
 
     for page in tree.all_pages():
         url = page.url
-        lastmod = page.lastmod  # this may be None if not available
+        lastmod = None
+        if page.last_modified != None:
+            lastmod = page.last_modified
+        elif page.news_story:
+            if page.news_story.publish_date != None:
+                lastmod = page.news_story.publish_date
 
-        if lastmod:
-            try:
-                lm = datetime.fromisoformat(lastmod.strip().replace("Z", "+00:00"))
-            except Exception:
-                continue
-
-            if lm > since_ago:
-                results.append((lm, url))
+        if lastmod and lastmod > since_ago:
+            results.append((lastmod, url))
 
     # sort newest -> oldest
     results.sort(key=lambda tup: tup[0], reverse=True)
@@ -82,8 +82,7 @@ def gha_output(name: str, value: str):
 def main():
     args = parse_args()
     since_ago = parse_since(args.since, args.since_unit)
-    xml = fetch_feed(args.feed_url)
-    candidates = set(extract_urls(xml, since_ago))
+    candidates = set(extract_urls(args.feed_url, since_ago))
 
     exclude_patterns = [p.strip() for p in args.exclude_urls.splitlines() if p.strip()]
     filter_patterns = [p.strip() for p in args.filter_urls.splitlines() if p.strip()]
