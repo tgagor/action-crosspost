@@ -13,8 +13,8 @@ def parse_args():
     p.add_argument("--message", default="{url}")
     return p.parse_args()
 
-def build_crosspost_cmd(url):
-    cmd = ["npx", "crosspost", url.format(url=url)]
+def build_crosspost_cmd(message, url):
+    cmd = ["npx", "crosspost"]
 
     # Twitter
     if (
@@ -62,6 +62,8 @@ def build_crosspost_cmd(url):
     if os.getenv("SLACK_TOKEN") and os.getenv("SLACK_CHANNEL"):
         cmd.append("--slack")
 
+    cmd.append(message.format(url=url))
+
     return cmd
 
 
@@ -75,13 +77,13 @@ def main():
         urls = urls[:limit]
 
     # dry run: check if at least one network is configured
-    test_cmd = build_crosspost_cmd("https://example.com")
+    test_cmd = build_crosspost_cmd(args.message, "https://example.com")
     if len(test_cmd) == 2:  # only ["npx", "crosspost", url]
         print("❌ No social network credentials provided. Aborting.")
         sys.exit(1)
 
     for url in urls:
-        cmd = build_crosspost_cmd(url)
+        cmd = build_crosspost_cmd(args.message, url)
         if args.dry_run:
             print(f"✅ Would post {url} with command: {' '.join(cmd)}")
             continue
