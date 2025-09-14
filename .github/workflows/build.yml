@@ -20,16 +20,6 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # os: [linux, windows, darwin]
-        # arch: [amd64, arm64]
-        # exclude:
-        #   - os: windows
-        #     arch: arm64 # Windows ARM64 is not supported by Go
-        os: [linux]
-        arch: [amd64]
-
     steps:
     - name: Checkout Code
       uses: actions/checkout@v5
@@ -46,6 +36,37 @@ jobs:
         VERSION_TAG: ${{ steps.guessed_tag_version.outputs.new_tag }}
       run: echo "VERSION=$(echo $VERSION_TAG | sed -e "s/^v//" -e "s/-.*$//")" >> $GITHUB_ENV
 
+  smoke-test:
+    name: smoke test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [linux, windows, darwin]
+        arch: [amd64, arm64]
+        exclude:
+          - os: windows
+            arch: arm64 # Windows ARM64 is a niche
+    needs: build
+    steps:
+    - name: Run action-crosspost on a test sitemap
+      uses: tgagor/action-crosspost@${{ github.sha }}
+      with:
+        dry-run: true
+        feed-url: https://gagor.pro/sitemap.xml
+        since: '1'
+        since-unit: year
+        mastodon-access-token: its-dry-run-so-whatever
+        mastodon-host: mastodon.social
+        exclude-urls: |
+          https://gagor.pro/
+          https://gagor.pro/author*
+          https://gagor.pro/tags/*
+          https://gagor.pro/categories/*
+          https://gagor.pro/posts/*
+          https://gagor.pro/about/
+        filter-urls: |
+          20
+
   pre-commit:
     name: pre-commit checks
     runs-on: ubuntu-latest
@@ -61,6 +82,7 @@ jobs:
     needs:
       - pre-commit
       - build
+      - smoke-test
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v5
@@ -101,6 +123,7 @@ jobs:
     needs:
       - pre-commit
       - build
+      - smoke-test
     permissions:
       pull-requests: write
       contents: write
