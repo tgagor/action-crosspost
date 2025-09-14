@@ -158,6 +158,7 @@ runs:
     - name: Install Python deps
       shell: bash
       run: |
+        uv venv
         uv pip install -r scripts/pyproject.toml
 
     - name: Get URLs from Sitemap
