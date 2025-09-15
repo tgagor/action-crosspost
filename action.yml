@@ -214,4 +214,5 @@ runs:
           --urls "${{ steps.get-urls.outputs.processed-urls }}" \
           --limit "$LIMIT" \
           --failure-strategy "$FAILURE_STRATEGY" \
+          --message "$MESSAGE" \
           ${DRY_RUN:+--dry-run}
