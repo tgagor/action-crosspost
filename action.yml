@@ -206,7 +206,7 @@ runs:
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
         SLACK_TOKEN: ${{ inputs.slack-token }}
         SLACK_CHANNEL: ${{ inputs.slack-channel }}
-        DRY_RUN: ${{ toLower(inputs.dry-run) == 'true' && 'true' || '' }}
+        DRY_RUN: ${{ (inputs.dry-run == 'true' || inputs.dry-run == 'TRUE' || inputs.dry-run == 'True') && 'true' || '' }}
         LIMIT: ${{ inputs.limit }}
         FAILURE_STRATEGY: ${{ inputs.failure-strategy }}
       run: |
