@@ -5,6 +5,7 @@ description = "A set of helper scripts"
 readme = "../README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "beautifulsoup4>=4.14.2",
     "ultimate-sitemap-parser>=1.6.0",
 ]
 [tool.autopep8]

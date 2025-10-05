@@ -1,19 +1,40 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import re
 import subprocess
 import sys
+
+import requests
+from bs4 import BeautifulSoup
 
 
 def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--urls", required=True)
     p.add_argument("--limit", type=int, required=True)
-    p.add_argument("--failure-strategy",
-                   choices=["ignore", "error"], default="ignore")
+    p.add_argument("--failure-strategy", choices=["ignore", "error"], default="ignore")
     p.add_argument("--dry-run", default=False, action="store_true")
     p.add_argument("--message", default="{url}")
     return p.parse_args()
+
+
+def extract_description(url):
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        meta = soup.find("meta", attrs={"name": "description"})
+        if meta and meta.get("content"):
+            return meta["content"]
+    except Exception as e:
+        print(f"⚠️ Could not fetch description from {url}: {e}")
+    return ""
+
+
+def message_needs_description(message):
+    # Matches {description} with optional spaces inside the braces
+    return re.search(r"\{ *description *\}", message) is not None
 
 
 def build_crosspost_cmd(message, url):
@@ -65,7 +86,14 @@ def build_crosspost_cmd(message, url):
     if os.getenv("SLACK_TOKEN") and os.getenv("SLACK_CHANNEL"):
         cmd.append("--slack")
 
-    cmd.append(message.format(url=url))
+    # Prepare description if needed
+    description = ""
+    if message_needs_description(message):
+        description = extract_description(url)
+
+    # Format message with url and description
+    formatted_message = message.format(url=url, description=description)
+    cmd.append(formatted_message)
 
     return cmd
 
