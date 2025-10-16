@@ -100,8 +100,8 @@ def build_crosspost_cmd(message, url):
 
 def main():
     args = parse_args()
-    limit = int(os.getenv("INPUT_LIMIT", "0")) or None
-    failure_strategy = os.getenv("INPUT_FAILURE_STRATEGY", "fail").lower()
+    limit = int(os.getenv("LIMIT", "0")) or None
+    failure_strategy = os.getenv("FAILURE_STRATEGY", "ignore").lower()
 
     urls = args.urls.splitlines()
     if limit:
