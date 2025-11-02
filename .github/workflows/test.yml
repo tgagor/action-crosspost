@@ -3,8 +3,8 @@ name: Smoke test action-crosspost
 on:
   push:
     paths-ignore:
-      - 'README.md'
-      - 'CONTRIBUTING.md'
+      - README.md
+      - CONTRIBUTING.md
     branches:
       - feature/*
       - bugfix/*

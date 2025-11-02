@@ -3,8 +3,8 @@ name: Build & Tests
 on:
   push:
     paths-ignore:
-      - 'README.md'
-      - 'CONTRIBUTING.md'
+      - README.md
+      - CONTRIBUTING.md
     branches:
       - main
       # - feature/*
@@ -103,7 +103,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create normal GitHub release
-        if: github.ref == 'refs/heads/main' && github.event_name != 'schedule'
+        if: github.ref == 'refs/heads/main'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -141,7 +141,7 @@ jobs:
     permissions:
       pull-requests: write
       contents: write
-    if: ${{ github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'}}
+    if: github.actor == 'dependabot[bot]' && github.event_name == 'pull_request'
     steps:
       - id: metadata
         uses: dependabot/fetch-metadata@v2
@@ -149,7 +149,7 @@ jobs:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
       - env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           gh pr review --approve "$PR_URL"
           gh pr merge --squash --auto "$PR_URL"
