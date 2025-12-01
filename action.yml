@@ -180,7 +180,8 @@ runs:
       if: ${{ steps.get-urls.outputs.processed-urls }}
       shell: bash
       run: |
-        npm install -g "@humanwhocodes/crosspost@1.0.1"
+        CROSSPOST_VERSION=$(jq -r '.dependencies["@humanwhocodes/crosspost"]' ${{ github.action_path }}/package.json)
+        npm install -g "@humanwhocodes/crosspost@$CROSSPOST_VERSION"
 
     - name: Post URLs with Crosspost
       if: ${{ steps.get-urls.outputs.processed-urls }}
