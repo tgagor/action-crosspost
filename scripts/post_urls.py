@@ -37,7 +37,7 @@ def extract_og_tags(url):
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "html.parser")
-        og_tags = {}
+        og_tags = set()
         for tag in soup.find_all("meta"):
             if tag.get("property", "").startswith("article:tag"):
                 og_tags.add(tag.get("content", ""))
