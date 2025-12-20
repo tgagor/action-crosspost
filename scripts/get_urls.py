@@ -17,18 +17,23 @@ def parse_args():
     p.add_argument(
         "--since-unit",
         choices=[
-            "minute", "minutes",
-            "hour", "hours",
-            "day", "days",
-            "week", "weeks",
-            "month", "months",
-            "year", "years"],
+            "minute",
+            "minutes",
+            "hour",
+            "hours",
+            "day",
+            "days",
+            "week",
+            "weeks",
+            "month",
+            "months",
+            "year",
+            "years",
+        ],
         required=True,
     )
-    p.add_argument("--exclude-urls", default="",
-                   help="Newline separated glob patterns")
-    p.add_argument("--filter-urls", default="",
-                   help="Newline separated substrings")
+    p.add_argument("--exclude-urls", default="", help="Newline separated glob patterns")
+    p.add_argument("--filter-urls", default="", help="Newline separated substrings")
     return p.parse_args()
 
 
@@ -75,8 +80,19 @@ def extract_urls(root_url: str, since_ago: datetime):
         elif page.news_story and page.news_story.publish_date:
             lastmod = page.news_story.publish_date
 
-        if lastmod and lastmod > since_ago:
-            results.append((lastmod, url))
+        if lastmod:
+            # If lastmod is date-only (time is 00:00:00), compare only date part
+            if (
+                lastmod.hour == 0
+                and lastmod.minute == 0
+                and lastmod.second == 0
+                and lastmod.microsecond == 0
+            ):
+                if lastmod.date() > since_ago.date():
+                    results.append((lastmod, url))
+            else:
+                if lastmod > since_ago:
+                    results.append((lastmod, url))
 
     # sort newest -> oldest
     results.sort(key=lambda tup: tup[0], reverse=True)
@@ -108,10 +124,8 @@ def main():
     since_ago = parse_since(args.since, args.since_unit)
     candidates = set(extract_urls(args.feed_url, since_ago))
 
-    exclude_patterns = [p.strip()
-                        for p in args.exclude_urls.splitlines() if p.strip()]
-    filter_patterns = [p.strip()
-                       for p in args.filter_urls.splitlines() if p.strip()]
+    exclude_patterns = [p.strip() for p in args.exclude_urls.splitlines() if p.strip()]
+    filter_patterns = [p.strip() for p in args.filter_urls.splitlines() if p.strip()]
 
     processed = []
     for url in sorted(candidates):
