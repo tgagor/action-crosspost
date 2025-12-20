@@ -18,6 +18,7 @@ This action fetches URLs from a `sitemap.xml` or RSS/Atom feed, filters them by 
 * Filter by **age** (`since` + `since-unit`) and by **URL include/exclude patterns**.
 * Run in **dry-run mode** to safely preview what would be posted.
 * Flexible failure strategies: stop on error or continue with other posts.
+* **Prefill messages with blog post metadata**: use `{description}` and `{tags}` in your message template to automatically include the post's meta description and tags.
 
 ---
 
@@ -50,8 +51,8 @@ on:
 Here are the most important inputs (see [`action.yml`](./action.yml) for the full list):
 
 | Input              | Required | Description                                                                                                                            |
-| ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `feed-url`         | ✅ Yes   | URL of the sitemap (`.xml`) or RSS/Atom feed to fetch posts from.                                                                      |
+|--------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------|
+| `feed-url`         | ✅ Yes    | URL of the sitemap (`.xml`) or RSS/Atom feed to fetch posts from.                                                                      |
 | `since`            | No       | How far back to fetch posts. Use with `since-unit`. Default: `1`.                                                                      |
 | `since-unit`       | No       | Unit for `since`: `minutes`, `hours`, `days`, `weeks`, `months`, `years`. Both singular and plural forms are accepted. Default: `day`. |
 | `limit`            | No       | Maximum number of posts to publish. **Do not flood!**                                                                                  |
@@ -116,6 +117,30 @@ Use **GitHub secrets** for these values.
 
 ---
 
+### Message templating with metadata
+
+You can customize the message posted to social networks using the `message` input.
+The following placeholders are supported:
+
+- `{url}`: The post URL.
+- `{description}`: The meta description from the blog post (if available).
+- `{tags}`: Tags extracted from the blog post (if available, formatted as hashtags).
+
+**Example:**
+
+```yaml
+with:
+  message: |
+    {description}
+    {url}
+
+    #blog {tags}
+```
+
+If the blog post contains a meta description and tags, these will be automatically inserted into the message.
+
+---
+
 ## 📝 Usage Examples
 
 ### Example 1 — Post from a sitemap
@@ -168,6 +193,20 @@ jobs:
             https://example.com/about/
           filter-urls: |
             book
+          message: |
+            {description}
+            {url}
+
+            #blog {tags}
+```
+
+**Resulting post message example:**
+
+```
+How to automate your blog crossposting with GitHub Actions.
+https://example.com/blog/automate-crossposting
+
+#blog #automation #github
 ```
 
 ---
