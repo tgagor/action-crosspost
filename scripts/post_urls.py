@@ -32,9 +32,30 @@ def extract_description(url):
     return ""
 
 
+def extract_og_tags(url):
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        og_tags = {}
+        for tag in soup.find_all("meta"):
+            if tag.get("property", "").startswith("article:tag"):
+                og_tags.add(tag.get("content", ""))
+        og_tags = {t.lower() for t in og_tags if t}
+        return og_tags
+    except Exception as e:
+        print(f"⚠️ Could not fetch OG tags from {url}: {e}")
+    return {}
+
+
 def message_needs_description(message):
     # Matches {description} with optional spaces inside the braces
     return re.search(r"\{ *description *\}", message) is not None
+
+
+def message_needs_tags(message):
+    # Matches {tags} with optional spaces inside the braces
+    return re.search(r"\{ *tags *\}", message) is not None
 
 
 def build_crosspost_cmd(message, url):
@@ -90,6 +111,16 @@ def build_crosspost_cmd(message, url):
     description = ""
     if message_needs_description(message):
         description = extract_description(url)
+
+    # Prepare og tags if needed
+    if message_needs_tags(message):
+        tags = extract_og_tags(url)
+        if tags:
+            # Format as hashtags
+            tags = " ".join(sorted({f"#{t}" for t in tags if t}))
+            message = re.sub(r"\{ *tags *\}", tags, message)
+        else:
+            message = re.sub(r"\{ *tags *\}", "", message)
 
     # Format message with url and description
     formatted_message = message.format(url=url, description=description)
