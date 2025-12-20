@@ -41,7 +41,7 @@ def extract_og_tags(url):
         for tag in soup.find_all("meta"):
             if tag.get("property", "").startswith("article:tag"):
                 og_tags.add(tag.get("content", ""))
-        og_tags = {t.lower() for t in og_tags if t}
+        og_tags = {t for t in og_tags if t}  # remove empty tags
         return og_tags
     except Exception as e:
         print(f"⚠️ Could not fetch OG tags from {url}: {e}")
