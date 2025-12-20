@@ -43,6 +43,11 @@ jobs:
           https://gagor.pro/about/
         filter-urls: |
           2025/08
+        message: |
+          {description}
+          {url}
+
+          #blog {tags}
 
     - name: Run action-crosspost on a test RSS feed
       uses: ./
