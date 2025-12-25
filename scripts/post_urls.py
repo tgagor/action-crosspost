@@ -117,8 +117,9 @@ def build_crosspost_cmd(message, url):
         tags = extract_og_tags(url)
         if tags:
             # Format as hashtags
-            tags = " ".join(sorted({f"#{t}" for t in tags if t}))
-            message = re.sub(r"\{ *tags *\}", tags, message)
+            normalized_tags = {re.sub("[^0-9a-zA-Z]+", "", t) for t in tags}
+            hashtags = " ".join(sorted({f"#{t}" for t in normalized_tags if t}))
+            message = re.sub(r"\{ *tags *\}", hashtags, message)
         else:
             message = re.sub(r"\{ *tags *\}", "", message)
 
