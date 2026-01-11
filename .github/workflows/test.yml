@@ -71,8 +71,8 @@ jobs:
         feed-url: https://gagor.pro/index.xml
         since: '4'
         since-unit: weeks
-        webmention-post-references: true
-        webmention-notify-hosts: >
+        webmention-scan-content: true
+        webmention-ping-hosts: >
           https://news.indieweb.org/en/webmention
           https://brid.gy/publish/bluesky
           https://brid.gy/publish/flickr
