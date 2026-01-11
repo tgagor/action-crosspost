@@ -117,6 +117,38 @@ Use **GitHub secrets** for these values.
 
 ---
 
+### Webmention support
+
+This action can also send [Webmentions](https://indieweb.org/Webmention) to notify other sites that you linked to them in your post.
+
+**How to enable:**
+
+- Set the `WEBMENTIONS_HOSTS` environment variable to a comma- or space-separated list of URLs you want to notify for each post (e.g. [IndieNews](https://news.indieweb.org/en/submit), [Bridgy](https://brid.gy/about#webmentions), or any site supporting webmentions).
+- After each successful post, the action will attempt to discover the webmention endpoint for each host and send a webmention from your post URL to the target.
+- In `dry-run` mode, it will only print what would be sent.
+
+**Example:**
+
+```yaml
+jobs:
+  crosspost:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run action-crosspost and send webmentions
+        uses: tgagor/action-crosspost@v1
+        env:
+          WEBMENTIONS_HOSTS: ""
+        with:
+          dry-run: true
+          feed-url: https://example.com/sitemap.xml
+          webmention-notify-hosts: >
+            https://news.indieweb.org/en/webmention
+            https://brid.gy/publish/bluesky
+```
+
+For more on webmentions, see [IndieWeb: How to submit a post](https://news.indieweb.org/how-to-submit-a-post) or [Bridgy Webmentions](https://brid.gy/about#webmentions).
+
+
 ### Message templating with metadata
 
 You can customize the message posted to social networks using the `message` input.

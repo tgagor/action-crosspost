@@ -63,3 +63,23 @@ jobs:
           https://gagor.pro/about/
         filter-urls: |
           book
+
+    - name: Run action-crosspost to test Webmentions
+      uses: ./
+      with:
+        dry-run: true
+        feed-url: https://gagor.pro/index.xml
+        since: '4'
+        since-unit: weeks
+        webmention-post-references: true
+        webmention-notify-hosts: >
+          https://news.indieweb.org/en/webmention
+          https://brid.gy/publish/bluesky
+          https://brid.gy/publish/flickr
+          https://brid.gy/publish/github
+          https://brid.gy/publish/mastodon
+        exclude-urls: |
+          https://gagor.pro/
+          https://gagor.pro/about/
+        filter-urls: |
+          book
