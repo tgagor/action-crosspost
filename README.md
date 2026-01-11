@@ -117,15 +117,21 @@ Use **GitHub secrets** for these values.
 
 ---
 
-### Webmention support
 
-This action can also send [Webmentions](https://indieweb.org/Webmention) to notify other sites that you linked to them in your post.
+### 🌐 Webmention support
 
-**How to enable:**
+This action can also send [Webmentions](https://indieweb.org/Webmention) to notify other sites about your posts. There are two modes:
 
-- Set the `WEBMENTIONS_HOSTS` environment variable to a comma- or space-separated list of URLs you want to notify for each post (e.g. [IndieNews](https://news.indieweb.org/en/submit), [Bridgy](https://brid.gy/about#webmentions), or any site supporting webmentions).
+**1. Shoot-and-forget notifications**
+
+- Use the `webmention-ping-hosts` input to provide a comma- or space-separated list of URLs (e.g. [IndieNews](https://news.indieweb.org/en/submit), [Bridgy](https://brid.gy/about#webmentions), or any site supporting webmentions).
 - After each successful post, the action will attempt to discover the webmention endpoint for each host and send a webmention from your post URL to the target.
 - In `dry-run` mode, it will only print what would be sent.
+
+**2. Dynamic webmentions to referenced URLs**
+
+- If you set `webmention-scan-content: true`, the action will scan each post's content (specifically the `e-content` microformat) for external links and send webmentions to those URLs.
+- This is useful for static sites that want to notify all referenced URLs dynamically.
 
 **Example:**
 
@@ -136,14 +142,13 @@ jobs:
     steps:
       - name: Run action-crosspost and send webmentions
         uses: tgagor/action-crosspost@v1
-        env:
-          WEBMENTIONS_HOSTS: ""
         with:
           dry-run: true
           feed-url: https://example.com/sitemap.xml
-          webmention-notify-hosts: >
+          webmention-ping-hosts: >
             https://news.indieweb.org/en/webmention
             https://brid.gy/publish/bluesky
+          webmention-scan-content: true
 ```
 
 For more on webmentions, see [IndieWeb: How to submit a post](https://news.indieweb.org/how-to-submit-a-post) or [Bridgy Webmentions](https://brid.gy/about#webmentions).
