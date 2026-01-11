@@ -124,7 +124,7 @@ This action can also send [Webmentions](https://indieweb.org/Webmention) to noti
 
 **1. Shoot-and-forget notifications**
 
-- Use the `webmention-ping-hosts` input to provide a comma- or space-separated list of URLs (e.g. [IndieNews](https://news.indieweb.org/en/submit), [Bridgy](https://brid.gy/about#webmentions), or any site supporting webmentions).
+- Use the `webmention-ping-hosts` input to provide a comma- or space-separated list of URLs (e.g. [Bridgy](https://brid.gy/about#webmentions), or any site supporting webmentions).
 - After each successful post, the action will attempt to discover the webmention endpoint for each host and send a webmention from your post URL to the target.
 - In `dry-run` mode, it will only print what would be sent.
 
@@ -146,12 +146,11 @@ jobs:
           dry-run: true
           feed-url: https://example.com/sitemap.xml
           webmention-ping-hosts: >
-            https://news.indieweb.org/en/webmention
             https://brid.gy/publish/bluesky
           webmention-scan-content: true
 ```
 
-For more on webmentions, see [IndieWeb: How to submit a post](https://news.indieweb.org/how-to-submit-a-post) or [Bridgy Webmentions](https://brid.gy/about#webmentions).
+For more on webmentions, [Bridgy Webmentions](https://brid.gy/about#webmentions).
 
 
 ### Message templating with metadata

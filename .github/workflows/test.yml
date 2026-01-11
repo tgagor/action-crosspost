@@ -20,61 +20,60 @@ jobs:
   test-run:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
+      - name: Checkout Code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-    - name: Run action-crosspost on a test sitemap
-      uses: ./
-      with:
-        dry-run: true
-        feed-url: https://gagor.pro/sitemap.xml
-        since: '2'
-        since-unit: years
-        mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
-        mastodon-host: mastodon.social
-        exclude-urls: |
-          https://gagor.pro/
-          https://gagor.pro/author*
-          https://gagor.pro/tags/*
-          https://gagor.pro/categories/*
-          https://gagor.pro/posts/*
-          https://gagor.pro/about/
-        filter-urls: |
-          2025/08
-        message: |
-          {description}
-          {url}
+      - name: Run action-crosspost on a test sitemap
+        uses: ./
+        with:
+          dry-run: true
+          feed-url: https://gagor.pro/sitemap.xml
+          since: "2"
+          since-unit: years
+          mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          mastodon-host: mastodon.social
+          exclude-urls: |
+            https://gagor.pro/
+            https://gagor.pro/author*
+            https://gagor.pro/tags/*
+            https://gagor.pro/categories/*
+            https://gagor.pro/posts/*
+            https://gagor.pro/about/
+          filter-urls: |
+            2025/08
+          message: |
+            {description}
+            {url}
 
-          #blog {tags}
+            #blog {tags}
 
-    - name: Run action-crosspost on a test RSS feed
-      uses: ./
-      with:
-        dry-run: true
-        feed-url: https://gagor.pro/index.xml
-        since: '4'
-        since-unit: weeks
-        mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
-        mastodon-host: mastodon.social
-        exclude-urls: |
-          https://gagor.pro/
-          https://gagor.pro/about/
-        filter-urls: |
-          book
+      - name: Run action-crosspost on a test RSS feed
+        uses: ./
+        with:
+          dry-run: true
+          feed-url: https://gagor.pro/index.xml
+          since: "4"
+          since-unit: weeks
+          mastodon-access-token: ${{ secrets.MASTODON_ACCESS_TOKEN }}
+          mastodon-host: mastodon.social
+          exclude-urls: |
+            https://gagor.pro/
+            https://gagor.pro/about/
+          filter-urls: |
+            book
 
-    - name: Run action-crosspost to test Webmentions
-      uses: ./
-      with:
-        dry-run: true
-        feed-url: https://gagor.pro/index.xml
-        since: '4'
-        since-unit: weeks
-        webmention-scan-content: true
-        webmention-ping-hosts: >
-          https://news.indieweb.org/en/webmention
-          https://brid.gy/publish/bluesky
-          https://brid.gy/publish/flickr
-          https://brid.gy/publish/github
-          https://brid.gy/publish/mastodon
+      - name: Run action-crosspost to test Webmentions
+        uses: ./
+        with:
+          dry-run: true
+          feed-url: https://gagor.pro/index.xml
+          since: "4"
+          since-unit: weeks
+          webmention-scan-content: true
+          webmention-ping-hosts: >
+            https://brid.gy/publish/bluesky
+            https://brid.gy/publish/flickr
+            https://brid.gy/publish/github
+            https://brid.gy/publish/mastodon
