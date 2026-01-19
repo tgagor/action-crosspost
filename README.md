@@ -120,37 +120,61 @@ Use **GitHub secrets** for these values.
 
 ### 🌐 Webmention support
 
-This action can also send [Webmentions](https://indieweb.org/Webmention) to notify other sites about your posts. There are two modes:
+This action can send [Webmentions](https://indieweb.org/Webmention) to notify other sites about your posts. There are two main approaches:
 
-**1. Shoot-and-forget notifications**
+**1. Endpoint-based webmentions (recommended for Brid.gy)**
 
-- Use the `webmention-ping-hosts` input to provide a comma- or space-separated list of URLs (e.g. [Bridgy](https://brid.gy/about#webmentions), or any site supporting webmentions).
-- After each successful post, the action will attempt to discover the webmention endpoint for each host and send a webmention from your post URL to the target.
-- In `dry-run` mode, it will only print what would be sent.
+If you want to send webmentions through a centralized endpoint like [Brid.gy](https://brid.gy/about#webmentions):
 
-**2. Dynamic webmentions to referenced URLs**
+- Set `webmention-endpoint` to the endpoint URL (e.g., `https://brid.gy/publish/webmention`).
+- Set `webmention-target-hosts` to the social network targets (e.g., `https://brid.gy/publish/bluesky`, `https://brid.gy/publish/mastodon`).
+- The action will send a webmention to the endpoint with your post as the source and each target as the target.
 
-- If you set `webmention-scan-content: true`, the action will scan each post's content (specifically the `e-content` microformat) for external links and send webmentions to those URLs.
-- This is useful for static sites that want to notify all referenced URLs dynamically.
+⚠️ **Note:** Webmention endpoints like Brid.gy ignore the `message` input. They fetch and parse your post HTML for microformats (h-entry, e-content, etc.) to determine the content. See [Brid.gy's microformats documentation](https://brid.gy/about#microformats) for details on how your post structure affects the result.
 
-**Example:**
+**2. Dynamic webmentions (scan content for links)**
+
+To automatically notify all external URLs mentioned in your post content:
+
+- Set `webmention-scan-content: true`.
+- The action will scan your post's `e-content` (IndieWeb microformat) for external links and send webmentions to each unique URL.
+- This is useful for notifying all sites you referenced in your posts.
+
+**Examples:**
+
+*Example 1: Using Brid.gy endpoint*
 
 ```yaml
 jobs:
   crosspost:
     runs-on: ubuntu-latest
     steps:
-      - name: Run action-crosspost and send webmentions
+      - name: Run action-crosspost with Brid.gy webmentions
         uses: tgagor/action-crosspost@v1
         with:
           dry-run: true
-          feed-url: https://example.com/sitemap.xml
-          webmention-ping-hosts: >
+          feed-url: https://example.com/rss.xml
+          webmention-endpoint: https://brid.gy/publish/webmention
+          webmention-target-hosts: >
             https://brid.gy/publish/bluesky
+            https://brid.gy/publish/mastodon
+```
+
+*Example 2: Scanning content for links and notifying them*
+
+```yaml
+jobs:
+  crosspost:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run action-crosspost with content scanning
+        uses: tgagor/action-crosspost@v1
+        with:
+          feed-url: https://example.com/rss.xml
           webmention-scan-content: true
 ```
 
-For more on webmentions, [Bridgy Webmentions](https://brid.gy/about#webmentions).
+For more on webmentions, see [Bridgy Webmentions](https://brid.gy/about#webmentions), [Brid.gy Microformats](https://brid.gy/about#microformats), or [IndieWeb Webmention spec](https://www.w3.org/TR/webmention/).
 
 
 ### Message templating with metadata
