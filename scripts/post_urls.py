@@ -241,12 +241,6 @@ def main():
     if limit:
         urls = urls[:limit]
 
-    # dry run: check if at least one network is configured
-    test_cmd = build_crosspost_cmd(args.message, "https://example.com")
-    if len(test_cmd) == 2:  # only ["npx", "crosspost", url]
-        print("❌ No social network credentials provided. Aborting.")
-        sys.exit(1)
-
     # Parse webmention configuration
     webmention_endpoint = os.getenv("WEBMENTION_ENDPOINT", "").strip()
     webmention_target_hosts = (
@@ -257,44 +251,63 @@ def main():
     scan_content_enabled = (
         os.getenv("WEBMENTION_SCAN_CONTENT", "false").lower() == "true"
     )
+
+    # Check if social networks are configured
+    test_cmd = build_crosspost_cmd(args.message, "https://example.com")
+    social_networks_enabled = len(test_cmd) > 2  # more than ["npx", "crosspost", url]
+
+    # Check if webmentions are configured
+    webmentions_enabled = bool(webmention_target_hosts) or scan_content_enabled
+
+    # Abort only if neither social networks nor webmentions are configured
+    if not social_networks_enabled and not webmentions_enabled:
+        print("❌ No social networks or webmentions configured. Aborting.")
+        sys.exit(1)
+
     for url in urls:
-        cmd = build_crosspost_cmd(args.message, url)
-        if args.dry_run:
-            print(f"✅ Would post {url} with command: {' '.join(cmd)}")
-            # Shoot-and-forget webmentions
-            if webmention_target_hosts:
-                notify_webmention_hosts(
-                    url,
-                    webmention_target_hosts,
-                    endpoint=webmention_endpoint,
-                    dry_run=True,
-                )
-            # Dynamic webmentions (only if enabled)
-            if scan_content_enabled:
-                send_webmentions_to_external_links(url, dry_run=True)
-            continue
-
-        print(f"🚀 Posting {url} ...")
-        try:
-            subprocess.run(cmd, check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"⚠️ Failed to post {url}: {e}")
-            if failure_strategy == "fail":
-                sys.exit(1)
+        # Crosspost to social networks (if configured)
+        if social_networks_enabled:
+            cmd = build_crosspost_cmd(args.message, url)
+            if args.dry_run:
+                print(f"✅ Would post {url} with command: {' '.join(cmd)}")
             else:
-                continue
+                print(f"🚀 Posting {url} ...")
+                try:
+                    subprocess.run(cmd, check=True)
+                except subprocess.CalledProcessError as e:
+                    print(f"⚠️ Failed to post {url}: {e}")
+                    if failure_strategy == "fail":
+                        sys.exit(1)
+                    else:
+                        # Continue with webmentions even if crosspost fails
+                        pass
 
-        # Shoot-and-forget webmentions
-        if webmention_target_hosts:
-            notify_webmention_hosts(
-                url,
-                webmention_target_hosts,
-                endpoint=webmention_endpoint,
-                dry_run=False,
-            )
-        # Dynamic webmentions (scan e-content for external links, only if enabled)
-        if scan_content_enabled:
-            send_webmentions_to_external_links(url, dry_run=False)
+        # Send webmentions (if configured)
+        if webmentions_enabled:
+            if args.dry_run:
+                # Shoot-and-forget webmentions
+                if webmention_target_hosts:
+                    notify_webmention_hosts(
+                        url,
+                        webmention_target_hosts,
+                        endpoint=webmention_endpoint,
+                        dry_run=True,
+                    )
+                # Dynamic webmentions (only if enabled)
+                if scan_content_enabled:
+                    send_webmentions_to_external_links(url, dry_run=True)
+            else:
+                # Shoot-and-forget webmentions
+                if webmention_target_hosts:
+                    notify_webmention_hosts(
+                        url,
+                        webmention_target_hosts,
+                        endpoint=webmention_endpoint,
+                        dry_run=False,
+                    )
+                # Dynamic webmentions (scan e-content for external links, only if enabled)
+                if scan_content_enabled:
+                    send_webmentions_to_external_links(url, dry_run=False)
 
 
 if __name__ == "__main__":
