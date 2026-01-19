@@ -138,12 +138,17 @@ inputs:
 
   # Webmentions.org
   # https://github.com/converspace/webmention/blob/master/README.md
-  webmention-ping-hosts:
-    description: "Send webmentions to these hosts after each post (e.g., Brid.gy, IndieNews). Use for 'shoot-and-forget' notifications."
+  # https://brid.gy/about#webmentions
+  webmention-endpoint:
+    description: "Webmention endpoint URL to use for sending webmentions (e.g., https://brid.gy/publish/webmention). When set, webmentions are sent to this endpoint with targets from webmention-target-hosts. Leave empty to auto-discover endpoints from target hosts."
+    required: false
+    default: ""
+  webmention-target-hosts:
+    description: "Comma or space-separated list of target URLs to notify about each post via webmentions (e.g., https://brid.gy/publish/bluesky, https://news.indieweb.org/en/webmention). Works with both endpoint-based and auto-discovery modes."
     required: false
     default: ""
   webmention-scan-content:
-    description: "If true, scan each post's content for external links and send webmentions to those URLs (dynamic mentions)."
+    description: "If true, scan each post's e-content (microformat) for external links and send webmentions to them. Useful for notifying all referenced URLs about mentions."
     required: false
     default: "false"
 
@@ -218,7 +223,8 @@ runs:
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
         SLACK_TOKEN: ${{ inputs.slack-token }}
         SLACK_CHANNEL: ${{ inputs.slack-channel }}
-        WEBMENTION_PING_HOSTS: ${{ inputs.webmention-ping-hosts }}
+        WEBMENTION_ENDPOINT: ${{ inputs.webmention-endpoint }}
+        WEBMENTION_TARGET_HOSTS: ${{ inputs.webmention-target-hosts }}
         WEBMENTION_SCAN_CONTENT: ${{ inputs.webmention-scan-content }}
         DRY_RUN: ${{ (inputs.dry-run == 'true' || inputs.dry-run == 'TRUE' || inputs.dry-run == 'True') && 'true' || '' }}
         LIMIT: ${{ inputs.limit }}

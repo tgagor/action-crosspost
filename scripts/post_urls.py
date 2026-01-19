@@ -29,17 +29,18 @@ def parse_args():
     return p.parse_args()
 
 
-def post_webmention(source, target):
+def post_webmention_to_endpoint(source, endpoint, target):
+    """Send webmention to a specific endpoint."""
     data = {"source": source, "target": target}
-    r = requests.post(target, data=data, timeout=10)
+    r = requests.post(endpoint, data=data, timeout=10)
     if r.status_code in (200, 201, 202):
-        return True, f"Webmention sent to {target}"
+        return True, f"Webmention sent via {endpoint}"
     else:
-        return False, f"Webmention failed for {target}: {r.status_code} {r.text}"
+        return False, f"Webmention failed: {r.status_code} {r.text}"
 
 
 def send_webmention(source, target):
-    """Send a webmention from source to target. Returns (success, message)."""
+    """Send a webmention from source to target by discovering endpoint. Returns (success, message)."""
     try:
         _, soup = fetch_post(target)
         endpoint = None
@@ -54,25 +55,34 @@ def send_webmention(source, target):
         if not endpoint:
             return False, f"No webmention endpoint found for {target}"
         endpoint = requests.compat.urljoin(target, endpoint)
-        return post_webmention(source, endpoint)
+        return post_webmention_to_endpoint(source, endpoint, target)
     except Exception as e:
         return False, f"Webmention error for {target}: {e}"
 
 
-def notify_webmention_hosts(source_url, hosts, dry_run=False):
-    """Send webmentions to a list of hosts (shoot and forget)."""
-    for host in hosts:
-        print(f"🌐 Notifying webmention host: source={source_url} target={host}")
+def notify_webmention_hosts(source_url, targets, endpoint=None, dry_run=False):
+    """Send webmentions to a list of targets (shoot and forget).
+
+    If endpoint is provided, send to that endpoint (e.g., Brid.gy).
+    Otherwise, discover endpoint from each target.
+    """
+    for target in targets:
+        print(f"🌐 Notifying webmention target: source={source_url} target={target}")
         if dry_run:
-            print(f"✅ Would send webmention: source={source_url} target={host}")
+            print(f"✅ Would send webmention: source={source_url} target={target}")
             continue
         # Only check that source is deployed (fetchable)
         try:
             fetch_post(source_url)
         except Exception as e:
-            print(f"⚠️ Could not fetch source {source_url} before notifying {host}: {e}")
+            print(
+                f"⚠️ Could not fetch source {source_url} before notifying {target}: {e}"
+            )
             continue
-        success, msg = post_webmention(source_url, host)
+        if endpoint:
+            success, msg = post_webmention_to_endpoint(source_url, endpoint, target)
+        else:
+            success, msg = send_webmention(source_url, target)
         if success:
             print(f"✅ {msg}")
         else:
@@ -237,11 +247,12 @@ def main():
         print("❌ No social network credentials provided. Aborting.")
         sys.exit(1)
 
-    # Parse webmention notify hosts from env (shoot and forget)
-    webmention_ping_hosts = (
-        os.getenv("WEBMENTION_PING_HOSTS", "").replace(",", " ").split()
+    # Parse webmention configuration
+    webmention_endpoint = os.getenv("WEBMENTION_ENDPOINT", "").strip()
+    webmention_target_hosts = (
+        os.getenv("WEBMENTION_TARGET_HOSTS", "").replace(",", " ").split()
     )
-    webmention_ping_hosts = [h.strip() for h in webmention_ping_hosts if h.strip()]
+    webmention_target_hosts = [h.strip() for h in webmention_target_hosts if h.strip()]
 
     scan_content_enabled = (
         os.getenv("WEBMENTION_SCAN_CONTENT", "false").lower() == "true"
@@ -251,8 +262,13 @@ def main():
         if args.dry_run:
             print(f"✅ Would post {url} with command: {' '.join(cmd)}")
             # Shoot-and-forget webmentions
-            if webmention_ping_hosts:
-                notify_webmention_hosts(url, webmention_ping_hosts, dry_run=True)
+            if webmention_target_hosts:
+                notify_webmention_hosts(
+                    url,
+                    webmention_target_hosts,
+                    endpoint=webmention_endpoint,
+                    dry_run=True,
+                )
             # Dynamic webmentions (only if enabled)
             if scan_content_enabled:
                 send_webmentions_to_external_links(url, dry_run=True)
@@ -269,8 +285,13 @@ def main():
                 continue
 
         # Shoot-and-forget webmentions
-        if webmention_ping_hosts:
-            notify_webmention_hosts(url, webmention_ping_hosts, dry_run=False)
+        if webmention_target_hosts:
+            notify_webmention_hosts(
+                url,
+                webmention_target_hosts,
+                endpoint=webmention_endpoint,
+                dry_run=False,
+            )
         # Dynamic webmentions (scan e-content for external links, only if enabled)
         if scan_content_enabled:
             send_webmentions_to_external_links(url, dry_run=False)
