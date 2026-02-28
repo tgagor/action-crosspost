@@ -172,7 +172,7 @@ runs:
     - name: Install Python deps
       shell: bash
       run: |
-        uv venv
+        uv venv --allow-existing
         uv pip install -r ${{ github.action_path }}/scripts/pyproject.toml
 
     - name: Get URLs from Sitemap
