@@ -2,9 +2,12 @@
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from functools import lru_cache
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -150,6 +153,47 @@ def extract_og_tags(url):
     return {}
 
 
+def extract_og_image(url):
+    """Extract og:image URL and alt text from a page. Returns (image_url, alt_text) or (None, None)."""
+    try:
+        _, soup = fetch_post(url)
+        meta = soup.find("meta", attrs={"property": "og:image"})
+        if meta and meta.get("content"):
+            image_url = meta["content"]
+            # Try to get og:image:alt
+            alt_meta = soup.find("meta", attrs={"property": "og:image:alt"})
+            alt_text = alt_meta["content"] if alt_meta and alt_meta.get("content") else ""
+            return image_url, alt_text
+    except Exception as e:
+        print(f"⚠️ Could not fetch og:image from {url}: {e}")
+    return None, None
+
+
+def download_image(image_url, temp_dir):
+    """Download an image to a temp directory. Returns the local file path or None."""
+    try:
+        resp = requests.get(image_url, timeout=30)
+        resp.raise_for_status()
+        # Determine file extension from URL or content-type
+        path = urlparse(image_url).path
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in (".jpg", ".jpeg", ".png", ".gif"):
+            content_type = resp.headers.get("content-type", "")
+            if "png" in content_type:
+                ext = ".png"
+            elif "gif" in content_type:
+                ext = ".gif"
+            else:
+                ext = ".jpg"
+        fd, filepath = tempfile.mkstemp(suffix=ext, dir=temp_dir)
+        with os.fdopen(fd, "wb") as f:
+            f.write(resp.content)
+        return filepath
+    except Exception as e:
+        print(f"⚠️ Could not download image {image_url}: {e}")
+    return None
+
+
 def message_needs_description(message):
     # Matches {description} with optional spaces inside the braces
     return re.search(r"\{ *description *\}", message) is not None
@@ -160,7 +204,7 @@ def message_needs_tags(message):
     return re.search(r"\{ *tags *\}", message) is not None
 
 
-def build_crosspost_cmd(message, url):
+def build_crosspost_cmd(message, url, image_path=None, image_alt=None):
     cmd = ["npx", "crosspost"]
 
     # Twitter
@@ -229,6 +273,12 @@ def build_crosspost_cmd(message, url):
     formatted_message = message.format(url=url, description=description)
     cmd.append(formatted_message)
 
+    # Add image if available
+    if image_path:
+        cmd.extend(["--image", image_path])
+        if image_alt:
+            cmd.extend(["--image-alt", image_alt])
+
     return cmd
 
 
@@ -264,50 +314,66 @@ def main():
         print("❌ No social networks or webmentions configured. Aborting.")
         sys.exit(1)
 
-    for url in urls:
-        # Crosspost to social networks (if configured)
-        if social_networks_enabled:
-            cmd = build_crosspost_cmd(args.message, url)
-            if args.dry_run:
-                print(f"✅ Would post {url} with command: {' '.join(cmd)}")
-            else:
-                print(f"🚀 Posting {url} ...")
-                try:
-                    subprocess.run(cmd, check=True)
-                except subprocess.CalledProcessError as e:
-                    print(f"⚠️ Failed to post {url}: {e}")
-                    if failure_strategy == "fail":
-                        sys.exit(1)
-                    else:
-                        # Continue with webmentions even if crosspost fails
-                        pass
+    # Create a temp directory for downloaded images
+    temp_dir = tempfile.mkdtemp(prefix="crosspost-")
 
-        # Send webmentions (if configured)
-        if webmentions_enabled:
-            if args.dry_run:
-                # Shoot-and-forget webmentions
-                if webmention_target_hosts:
-                    notify_webmention_hosts(
-                        url,
-                        webmention_target_hosts,
-                        endpoint=webmention_endpoint,
-                        dry_run=True,
-                    )
-                # Dynamic webmentions (only if enabled)
-                if scan_content_enabled:
-                    send_webmentions_to_external_links(url, dry_run=True)
-            else:
-                # Shoot-and-forget webmentions
-                if webmention_target_hosts:
-                    notify_webmention_hosts(
-                        url,
-                        webmention_target_hosts,
-                        endpoint=webmention_endpoint,
-                        dry_run=False,
-                    )
-                # Dynamic webmentions (scan e-content for external links, only if enabled)
-                if scan_content_enabled:
-                    send_webmentions_to_external_links(url, dry_run=False)
+    try:
+        for url in urls:
+            # Extract image for this post
+            image_path = None
+            image_alt = None
+            image_url, image_alt_text = extract_og_image(url)
+            if image_url:
+                print(f"🖼️ Found image for {url}: {image_url}")
+                image_path = download_image(image_url, temp_dir)
+                image_alt = image_alt_text
+
+            # Crosspost to social networks (if configured)
+            if social_networks_enabled:
+                cmd = build_crosspost_cmd(args.message, url, image_path=image_path, image_alt=image_alt)
+                if args.dry_run:
+                    print(f"✅ Would post {url} with command: {' '.join(cmd)}")
+                else:
+                    print(f"🚀 Posting {url} ...")
+                    try:
+                        subprocess.run(cmd, check=True)
+                    except subprocess.CalledProcessError as e:
+                        print(f"⚠️ Failed to post {url}: {e}")
+                        if failure_strategy == "fail":
+                            sys.exit(1)
+                        else:
+                            # Continue with webmentions even if crosspost fails
+                            pass
+
+            # Send webmentions (if configured)
+            if webmentions_enabled:
+                if args.dry_run:
+                    # Shoot-and-forget webmentions
+                    if webmention_target_hosts:
+                        notify_webmention_hosts(
+                            url,
+                            webmention_target_hosts,
+                            endpoint=webmention_endpoint,
+                            dry_run=True,
+                        )
+                    # Dynamic webmentions (only if enabled)
+                    if scan_content_enabled:
+                        send_webmentions_to_external_links(url, dry_run=True)
+                else:
+                    # Shoot-and-forget webmentions
+                    if webmention_target_hosts:
+                        notify_webmention_hosts(
+                            url,
+                            webmention_target_hosts,
+                            endpoint=webmention_endpoint,
+                            dry_run=False,
+                        )
+                    # Dynamic webmentions (scan e-content for external links, only if enabled)
+                    if scan_content_enabled:
+                        send_webmentions_to_external_links(url, dry_run=False)
+    finally:
+        # Clean up temp directory
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":
