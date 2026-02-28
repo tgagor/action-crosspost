@@ -162,7 +162,9 @@ def extract_og_image(url):
             image_url = meta["content"]
             # Try to get og:image:alt
             alt_meta = soup.find("meta", attrs={"property": "og:image:alt"})
-            alt_text = alt_meta["content"] if alt_meta and alt_meta.get("content") else ""
+            alt_text = (
+                alt_meta["content"] if alt_meta and alt_meta.get("content") else ""
+            )
             return image_url, alt_text
     except Exception as e:
         print(f"⚠️ Could not fetch og:image from {url}: {e}")
@@ -174,17 +176,34 @@ def download_image(image_url, temp_dir):
     try:
         resp = requests.get(image_url, timeout=30)
         resp.raise_for_status()
-        # Determine file extension from URL or content-type
-        path = urlparse(image_url).path
-        ext = os.path.splitext(path)[1].lower()
-        if ext not in (".jpg", ".jpeg", ".png", ".gif"):
-            content_type = resp.headers.get("content-type", "")
-            if "png" in content_type:
-                ext = ".png"
-            elif "gif" in content_type:
-                ext = ".gif"
+
+        # Map MIME types to extensions (Content-Type is primary source)
+        content_type_map = {
+            "image/jpeg": ".jpg",
+            "image/jpg": ".jpg",
+            "image/png": ".png",
+            "image/gif": ".gif",
+            "image/webp": ".webp",
+            "image/avif": ".avif",
+            "image/tiff": ".tiff",
+            "image/svg+xml": ".svg",
+            "image/bmp": ".bmp",
+        }
+
+        # Determine extension from Content-Type header (primary source)
+        content_type = resp.headers.get("content-type", "").split(";")[0].strip()
+        ext = content_type_map.get(content_type)
+
+        # Fallback to URL path parsing if Content-Type is unknown
+        if not ext:
+            path = urlparse(image_url).path
+            url_ext = os.path.splitext(path)[1].lower()
+            if url_ext in content_type_map.values():
+                ext = url_ext
             else:
+                # Default to JPEG if unable to determine
                 ext = ".jpg"
+
         fd, filepath = tempfile.mkstemp(suffix=ext, dir=temp_dir)
         with os.fdopen(fd, "wb") as f:
             f.write(resp.content)
@@ -330,7 +349,9 @@ def main():
 
             # Crosspost to social networks (if configured)
             if social_networks_enabled:
-                cmd = build_crosspost_cmd(args.message, url, image_path=image_path, image_alt=image_alt)
+                cmd = build_crosspost_cmd(
+                    args.message, url, image_path=image_path, image_alt=image_alt
+                )
                 if args.dry_run:
                     print(f"✅ Would post {url} with command: {' '.join(cmd)}")
                 else:
