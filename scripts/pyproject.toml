@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "beautifulsoup4>=4.14.2",
     "requests>=2.34.2",
-    "ultimate-sitemap-parser>=1.6.0",
+    "ultimate-sitemap-parser>=1.8.1",
 ]
 [tool.autopep8]
 max_line_length = 120
